@@ -1,0 +1,1553 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>音楽と100マス計算</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --surface2:#ECEFF3; --ink:#1D2936; --muted:#596472; --line:#CAD1DA; --line-strong:#7F8B9B;
+  --head:#E6ECF3; --accent:#1F3A5F; --accent-ink:#FFFFFF; --accent-soft:#DBE5F1;
+  --cur:#FFF2BF; --cur-line:#B9800F; --warn:#A23F18; --warn-soft:#FBE8DE; --ok:#2C6845; --ok-soft:#DFEFE5;
+  --shadow:0 1px 2px rgba(20,32,48,.06),0 4px 16px rgba(20,32,48,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161B; --surface:#1A2028; --surface2:#222A34; --ink:#E4E8ED; --muted:#9AA5B2; --line:#323D4A; --line-strong:#5E6C7D;
+    --head:#25303D; --accent:#8CB1DD; --accent-ink:#0E1621; --accent-soft:#22334A;
+    --cur:#3B3418; --cur-line:#E0AE48; --warn:#EFA07C; --warn-soft:#3A2418; --ok:#86C7A0; --ok-soft:#1C3226;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161B; --surface:#1A2028; --surface2:#222A34; --ink:#E4E8ED; --muted:#9AA5B2; --line:#323D4A; --line-strong:#5E6C7D;
+  --head:#25303D; --accent:#8CB1DD; --accent-ink:#0E1621; --accent-soft:#22334A;
+  --cur:#3B3418; --cur-line:#E0AE48; --warn:#EFA07C; --warn-soft:#3A2418; --ok:#86C7A0; --ok-soft:#1C3226;
+  --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);margin:0;
+  font-family:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  font-size:15px;line-height:1.7;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.35}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-family:"BIZ UDGothic","Consolas","Menlo",monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- 実験者の画面 ---------- */
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 64px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin-bottom:20px}
+.top h1{font-size:24px}
+.top .sub{color:var(--muted);font-size:13px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:18px}
+.panel > h2{font-size:17px;display:flex;gap:10px;align-items:baseline;margin-bottom:14px}
+.panel > h2 .step{font-family:"BIZ UDGothic",monospace;font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 6px;line-height:1.6}
+.hint{color:var(--muted);font-size:13px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 18px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field > span{font-size:13px;font-weight:700}
+input[type=text],input[type=number],input[type=time],select,textarea{
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:7px 10px;min-width:0;width:100%}
+textarea{min-height:72px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,label.pill:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.orderline{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.chip{font-family:"BIZ UDGothic",monospace;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:6px;background:var(--accent-soft);color:var(--ink);font-weight:700;padding:0 6px}
+.arrow{color:var(--muted)}
+.btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 16px;cursor:pointer;line-height:1.4}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:4px 10px;font-size:13px;border-radius:6px}
+.btn.danger{color:var(--warn);border-color:var(--warn)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.audiolist{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.arow{display:grid;grid-template-columns:44px minmax(150px,1.1fr) minmax(160px,1.4fr) 132px auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.arow:first-child{border-top:0}
+.arow.head{background:var(--surface2);font-size:12px;font-weight:700;color:var(--muted);padding-block:6px}
+.arow .cond b{display:block;font-size:14px}
+.arow .cond small{color:var(--muted);font-size:12px;display:block;line-height:1.4}
+.arow .file{font-size:13px;min-width:0;overflow-wrap:anywhere}
+.arow .file .ok{color:var(--ok)}
+.arow .file .ng{color:var(--warn)}
+.arow input[type=number]{padding:4px 6px}
+.offset{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap}
+@media (max-width:760px){
+  .arow{grid-template-columns:40px 1fr;row-gap:6px}
+  .arow.head{display:none}
+  .arow .file,.arow .offset,.arow .acts{grid-column:2}
+}
+.checks{display:grid;gap:6px;margin:4px 0 14px;padding:0;list-style:none;font-size:14px}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks .m{font-weight:700;width:1.2em;flex:none}
+.checks .ok .m{color:var(--ok)}
+.checks .ng .m{color:var(--warn)}
+.note{border-radius:8px;padding:10px 14px;font-size:14px;background:var(--surface2)}
+.note.warn{background:var(--warn-soft);color:var(--ink)}
+.note.warn b{color:var(--warn)}
+.note.ok{background:var(--ok-soft)}
+details.more summary{cursor:pointer;font-weight:700;font-size:14px}
+details.more[open] summary{margin-bottom:12px}
+table.list{border-collapse:collapse;width:100%;font-size:13px}
+table.list th,table.list td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+table.list th{font-size:12px;color:var(--muted);font-weight:700}
+.tablebox{overflow-x:auto}
+.tag{font-size:11px;border-radius:4px;padding:1px 6px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.tag.run{background:var(--warn-soft);color:var(--warn)}
+.tag.done{background:var(--ok-soft);color:var(--ok)}
+.msg{font-size:13px;margin-top:8px;min-height:1.2em}
+.msg.err{color:var(--warn)}
+.msg.ok{color:var(--ok)}
+
+/* ---------- 参加者の画面 ---------- */
+.stage{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-block:32px}
+.card{width:100%;max-width:760px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:32px 36px;font-size:19px;line-height:1.85}
+.card h2{font-size:24px;margin-bottom:16px}
+.card p{margin:0 0 12px}
+.card ul,.card ol{margin:0 0 14px;padding-left:1.3em}
+.card li{margin-bottom:6px}
+.card .actions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px;flex-wrap:wrap}
+.card .btn{font-size:18px;padding:10px 26px}
+.key{font-family:"BIZ UDGothic",monospace;display:inline-block;border:1px solid var(--line-strong);border-bottom-width:3px;border-radius:5px;padding:0 7px;font-size:.85em;line-height:1.5;background:var(--surface2)}
+.progress{font-size:14px;color:var(--muted);margin-bottom:8px;font-family:"BIZ UDGothic",monospace}
+@media (max-width:560px){.card{padding:22px 18px;font-size:17px}}
+.fix{font-size:64px;line-height:1;color:var(--ink);user-select:none;font-family:"BIZ UDGothic",monospace}
+.restnote{color:var(--muted);font-size:17px;margin-top:40px;text-align:center}
+.count{font-size:120px;line-height:1;font-family:"BIZ UDGothic",monospace;font-weight:700;color:var(--accent)}
+.big{font-size:44px;font-weight:700;margin-bottom:12px}
+
+/* 100マス */
+.taskbar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 14px;border-radius:10px;margin-bottom:10px}
+.taskbar.cue{animation:cue 1.2s ease-out}
+@keyframes cue{0%{background:var(--accent);color:var(--accent-ink)}100%{background:transparent}}
+.taskbar .opname{font-size:26px;font-weight:700}
+.taskbar .ophow{font-size:17px;color:var(--muted);margin-left:10px;font-weight:400}
+.sheetinfo{display:flex;align-items:center;gap:12px}
+.sheetno{font-family:"BIZ UDGothic",monospace;font-size:16px;font-weight:700;border:1px solid var(--line-strong);border-radius:999px;padding:2px 12px}
+.sheetnote{font-size:15px;font-weight:700;color:var(--accent);animation:fadeaway 3.5s forwards}
+@keyframes fadeaway{0%,70%{opacity:1}100%{opacity:0}}
+.steps{display:flex;gap:6px;font-size:15px}
+.steps span{padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.steps span.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.steps span.past{text-decoration:line-through}
+.masu{--c:min(calc((100vh - 140px) / 11), calc((100vw - 48px) / 11), 64px);border-collapse:collapse;font-family:"BIZ UDGothic","Consolas",monospace;user-select:none}
+@supports (height:100dvh){.masu{--c:min(calc((100dvh - 140px) / 11), calc((100vw - 48px) / 11), 64px)}}
+.masu th,.masu td{width:var(--c);height:var(--c);min-width:var(--c);font-size:calc(var(--c) * .5);text-align:center;vertical-align:middle;padding:0;border:1px solid var(--line-strong)}
+.masu th{background:var(--head);font-weight:700;border-width:2px}
+.masu td{background:var(--surface)}
+.masu td.cur{background:var(--cur);box-shadow:inset 0 0 0 3px var(--cur-line)}
+.masu td.cur::after{content:"";display:inline-block;width:2px;height:.9em;background:var(--ink);vertical-align:-0.1em;margin-left:1px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.masu td.done{color:var(--ink)}
+.taskhint{margin-top:10px;font-size:14px;color:var(--muted)}
+.donebox{margin-top:10px;font-size:17px;color:var(--accent);font-weight:700}
+
+/* Affect Grid */
+.agbox{display:flex;flex-direction:column;align-items:center}
+.ag{--g:min(46px, calc((100vw - 220px) / 9), calc((100vh - 330px) / 10));display:grid;grid-template-columns:auto repeat(9, var(--g)) auto;grid-template-rows:auto repeat(9, var(--g)) auto;user-select:none}
+.ag.compact{--g:min(38px, calc((100vw - 220px) / 9))}
+@media (max-width:560px){.ag{--g:calc((100vw - 150px) / 9)}.ag.compact{--g:calc((100vw - 150px) / 9)}}
+.ag .lab{font-size:14px;font-weight:700;color:var(--muted);display:flex;align-items:center;white-space:nowrap;padding:4px 8px}
+.ag .lab.r{justify-content:flex-end}
+.ag .lab.c{justify-content:center}
+.ag .lab .ax{color:var(--accent);margin:0 4px;font-size:12px}
+.ag .lab.side{font-size:16px;color:var(--ink)}
+.ag .lab.top,.ag .lab.bottom{white-space:normal;text-align:center;line-height:1.35}
+.ag .lab.top,.ag .lab.bottom{color:var(--ink)}
+.agguide{font-size:16px;line-height:1.7;margin:0 0 14px;padding-left:1.2em}
+.qnote{font-size:13px;font-weight:400;color:var(--muted)}
+.ag button{appearance:none;border:1px solid var(--line-strong);margin:0 -1px -1px 0;background:var(--surface);cursor:pointer;padding:0;font-size:calc(var(--g) * .62);line-height:1;color:var(--accent);font-weight:700}
+.ag button:hover{background:var(--surface2)}
+.ag button.mid{background:var(--surface2)}
+.ag button.sel{background:var(--accent-soft)}
+.agcap{font-size:15px;color:var(--muted);margin:8px 0 0;text-align:center}
+
+/* アンケート */
+.form{width:100%;max-width:820px}
+.form .card{max-width:none}
+.qsec{font-size:18px;font-weight:700;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+.qsec:first-of-type{margin-top:0}
+.q{padding:12px 0 14px;border-bottom:1px solid var(--line)}
+.q .qt{font-size:17px;margin-bottom:8px;line-height:1.6}
+.q .qt .req{color:var(--warn);font-size:12px;margin-left:6px;font-weight:700}
+.q.missing{background:var(--warn-soft);border-radius:8px;padding-inline:10px}
+.q.missing .qt::after{content:"　← 回答してください";color:var(--warn);font-size:14px;font-weight:700}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+label.pill{position:relative;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:999px;padding:6px 16px;cursor:pointer;font-size:16px;background:var(--surface);min-height:40px}
+label.pill input{position:absolute;opacity:0;pointer-events:none}
+label.pill:hover{background:var(--surface2)}
+label.pill:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.scale{display:grid;grid-template-columns:repeat(7, minmax(40px, 56px));gap:6px}
+.scale label.pill{border-radius:8px;padding:6px 0;font-family:"BIZ UDGothic",monospace}
+.anchors{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:4px;max-width:calc(7 * 56px + 36px);gap:12px}
+.extra{margin-top:8px}
+.follow{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:15px}
+.follow .inline{flex-wrap:nowrap}
+.follow input[type=text]{width:240px;max-width:100%}
+.follow input[type=number]{width:100px}
+.follow input[type=time]{width:140px}
+.inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inline input{max-width:140px}
+.q.missing .qt[data-range]::after{content:attr(data-range)}
+.ratings{display:grid;grid-template-columns:1fr;gap:24px;align-items:start}
+@media (min-width:1180px){.ratings.two{grid-template-columns:auto 1fr}}
+.formerr{color:var(--warn);font-weight:700;font-size:15px;margin-right:auto;align-self:center}
+.replay{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:6px 0 18px;box-shadow:var(--shadow)}
+.replay-head{font-size:16px;font-weight:700;margin-bottom:8px}
+.replay-list{display:flex;flex-wrap:wrap;gap:8px}
+.rp{appearance:none;display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:86px;padding:6px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);cursor:pointer;font-size:15px;line-height:1.3}
+.rp:hover{background:var(--surface2)}
+.rp .ic,.rp span{font-size:13px;color:var(--muted)}
+.rp.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.rp.on .ic{color:var(--accent-ink)}
+.rp.silent{cursor:default;background:var(--surface2);border-style:dashed}
+
+/* 実験者メニュー */
+.xbtn{position:fixed;right:calc(10px + env(safe-area-inset-right, 0px));bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:30;font-size:12px;opacity:.3;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--muted)}
+.xbtn:hover{opacity:1}
+.xpanel{position:fixed;right:calc(10px + env(safe-area-inset-right, 0px));bottom:calc(46px + env(safe-area-inset-bottom, 0px));z-index:31;width:min(340px, calc(100vw - 32px));background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:14px;font-size:14px}
+.xpanel h3{font-size:14px;margin-bottom:6px}
+.xpanel .row{margin-top:8px}
+.xpanel .btn{font-size:13px;padding:6px 10px}
+.banner{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top, 0px));transform:translateX(-50%);z-index:40;background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn);border-radius:8px;padding:8px 16px;font-size:16px;font-weight:700;max-width:calc(100vw - 32px)}
+</style>
+
+<div id="app"></div>
+
+<script type="application/json" id="clips-meta">{"target_lufs": -25.0, "max_tp": -1.0, "clips": []}</script>
+<script>
+"use strict";
+/* =========================================================================
+   音楽と100マス計算（予備実験用）  —  1ファイルで動く実験プログラム
+   データは この端末のブラウザ（localStorage）に自動で残り、終了画面から
+   ZIP（CSV 5種＋JSON）で保存する。
+   ========================================================================= */
+const APP_VERSION = "2026-11-20";
+const PREFS_V = 4;   // 時間の設定を覚えた版（変えたら古い設定を使わない）
+const CODES = ["A","B","C","D","E","F","G"];
+const COND = {
+  A:{label:"自選曲",        song:"参加者が選んだ曲",                    lyrics:null},
+  B:{label:"歌詞あり・速い", song:"歌詞あり・テンポの速い曲（120 BPM以上）",                lyrics:true},
+  C:{label:"歌詞あり・遅い", song:"歌詞あり・テンポの遅い曲（90 BPM以下）",          lyrics:true},
+  D:{label:"歌詞なし・速い", song:"歌詞なし・テンポの速い曲（120 BPM以上）", lyrics:false},
+  E:{label:"歌詞なし・遅い", song:"歌詞なし・テンポの遅い曲（90 BPM以下）", lyrics:false},
+  F:{label:"K.448",        song:"モーツァルト K.448 第1楽章",            lyrics:false},
+  G:{label:"無音",          song:"なし（ヘッドホンは着ける）",             lyrics:null},
+};
+const KEYWORDS = { F:["448","mozart","モーツァルト"] };   // ファイル名の先頭を「B_」のようにすると、その条件に自動で割り当てる
+const OPS = {
+  add:{name:"たし算", sym:"＋", how:"左の数と上の数を足す",     f:(a,b)=>a+b},
+  sub:{name:"ひき算", sym:"－", how:"左の数から上の数を引く",   f:(a,b)=>a-b},
+  mul:{name:"かけ算", sym:"×", how:"左の数（2けた）と上の数（1けた）をかける",   f:(a,b)=>a*b},
+};
+const BASE_SEED = 20261106;
+const DEFAULTS = {rest_s:60, practice:true, lead_s:30, task_s:120, practice_s:60, break_s:0, volume:100, theme:"light"};
+const TEST = {rest_s:5, lead_s:5, task_s:30, practice_s:10, break_s:0};
+
+/* ---------- 小道具 ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = (n, w=2) => String(n).padStart(w, "0");
+function isoLocal(ms){
+  const d = new Date(ms), off = -d.getTimezoneOffset(), a = Math.abs(off);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(),3)}${off>=0?"+":"-"}${pad(Math.floor(a/60))}:${pad(a%60)}`;
+}
+function stamp(){ const e = Date.now(); return {iso:isoLocal(e), epoch_ms:e, perf_ms:Math.round(performance.now()*10)/10}; }
+const mmss = (s) => (s==null || !isFinite(s)) ? "—" : `${Math.floor(s/60)}:${pad(Math.floor(s%60))}`;
+function median(a){ if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2 ? b[m] : (b[m-1]+b[m])/2; }
+function mulberry32(a){ return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* Williams 法（7条件・14通り）— Word の手順書と同じ表 */
+function williams(){
+  const n=7, first=[0]; let lo=1, hi=n-1;
+  for(let j=1;j<n;j++){ if(j%2) first.push(lo++); else first.push(hi--); }
+  const rows = Array.from({length:n}, (_, r) => first.map((x) => (x + r) % n));
+  rows.push(...rows.map((r) => [...r].reverse()));
+  return rows.map((r) => r.map((x) => CODES[x]));
+}
+const WILLIAMS = williams();
+const seedFor = (week) => BASE_SEED + (week ? week * 101 : 0);
+/* 用紙：第0週（予備予備）は Word の用紙と同じ数字の並び。週ごとに並びを変える */
+/* 計算は 2けた × 1けた のかけ算。左（縦）の10個の2けたの数はどの表も同じで、並びだけを変える
+   （十の位は1〜9がすべて、一の位は0〜9がすべて1回ずつ出る組み合わせ）。上（横）は 2〜9（×0・×1 は入れない）。
+   → どの表も同じ80問（10行×8列・同じ難しさ）。練習（P）と各順番（1〜7）に4枚ずつ用意し、表を解き終えたら次の表に進む */
+const ROW_NUMS = [17, 26, 38, 43, 52, 64, 79, 81, 95, 30];
+const COL_NUMS = [2, 3, 4, 5, 6, 7, 8, 9];
+function makeSheets(seed){
+  const rnd = mulberry32(seed);
+  const perm = (arr) => { const a = [...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const list = [];
+  ["P","1","2","3","4","5","6","7"].forEach((prefix) => { for(let n=1; n<=4; n++) list.push({id:`${prefix}M${n}`, op:"mul", cols:perm(COL_NUMS), rows:perm(ROW_NUMS)}); });
+  return list;
+}
+const sheetsOf = (S, prefix) => S.sheets.filter((s) => s.id.startsWith(prefix + "M"));
+function suggestOrder(pid, week){
+  if(!week) return 6;
+  const m = String(pid||"").match(/(\d+)/); if(!m) return null;
+  const i = parseInt(m[1], 10); return ((i - 1) * 4 + (week - 1)) % 14 + 1;
+}
+
+/* ---------- 保存（この端末） ---------- */
+const LS = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} },
+};
+const IDX = "m100_index", SKEY = (id) => "m100_s_" + id, PREFS = "m100_prefs";
+function readIndex(){ try{ return JSON.parse(LS.get(IDX) || "[]"); }catch(e){ return []; } }
+function writeIndex(list){ LS.set(IDX, JSON.stringify(list)); }
+function loadSession(id){ try{ return JSON.parse(LS.get(SKEY(id)) || "null"); }catch(e){ return null; } }
+let storageOk = true;
+function persist(){
+  if(!S) return;
+  S.updated_at = isoLocal(Date.now());
+  storageOk = LS.set(SKEY(S.session_id), JSON.stringify(S));
+  const list = readIndex().filter((x) => x.id !== S.session_id);
+  list.unshift({id:S.session_id, pid:S.participant_id, week:S.week, order_no:S.order_no, test:S.test_mode, status:S.status, started:S.created_at, updated:S.updated_at, done_conds:Object.values(S.conds).filter((c)=>c.ratings && c.ratings.done).length});
+  writeIndex(list);
+}
+let persistTimer = null;
+function persistSoon(){ if(persistTimer) return; persistTimer = setTimeout(() => { persistTimer = null; persist(); }, 4000); }
+function prefs(){ try{ return JSON.parse(LS.get(PREFS) || "{}"); }catch(e){ return {}; } }
+function savePrefs(p){ LS.set(PREFS, JSON.stringify(p)); }
+
+/* ---------- 実行中の状態 ---------- */
+let S = null;                  // いまのセッション（保存されるデータ）
+const AUD = {};                // 音源（ファイルは保存されない）: code -> {file,url,el,duration,name}
+const OFFS = {};               // 開始位置（秒）: code -> number
+const RT = {timers:[], keydown:null, keyup:null, onSkip:null};
+function later(fn, ms){ const id = setTimeout(fn, ms); RT.timers.push(id); return id; }
+function clearRuntime(){
+  RT.timers.forEach(clearTimeout); RT.timers = [];
+  if(RT.keydown){ document.removeEventListener("keydown", RT.keydown, true); RT.keydown = null; }
+  if(RT.keyup){ document.removeEventListener("keyup", RT.keyup, true); RT.keyup = null; }
+  RT.onSkip = null;
+}
+function onKeys(down, up){
+  RT.keydown = down; document.addEventListener("keydown", down, true);
+  if(up){ RT.keyup = up; document.addEventListener("keyup", up, true); }
+}
+function logEvent(type, detail){
+  if(!S) return;
+  const ph = S.phases[S.phase_idx] || {};
+  S.events.push({...stamp(), type, phase:ph.type||"", pos:ph.pos||"", code:ph.pos?S.order[ph.pos-1]:"", detail: detail ? JSON.stringify(detail) : ""});
+}
+
+/* ---------- 音源 ---------- */
+/* 内蔵の音源（B〜F）：音源入りのHTMLでは、このページの中に切り出し済みの音源が入っている */
+let TARGET_LUFS = -25;
+const EMB = {};
+(function loadEmbedded(){
+  const m = document.getElementById("clips-meta"); if(!m) return;
+  let meta; try{ meta = JSON.parse(m.textContent); }catch(e){ return; }
+  if(typeof meta.target_lufs === "number") TARGET_LUFS = meta.target_lufs;
+  (meta.clips || []).forEach((c) => { const el = document.getElementById("clip-" + c.code); if(el) EMB[c.code] = {meta:c, el}; });
+})();
+function embeddedBlob(code){
+  const e = EMB[code]; if(!e) return null;
+  if(!e.blob){
+    const bin = atob(e.el.textContent.replace(/\s+/g, "")), u = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u[i] = bin.charCodeAt(i);
+    e.blob = new Blob([u], {type: e.meta.mime || "audio/webm"});
+  }
+  return e.blob;
+}
+
+/* 再生：<audio> → 音量の調整（GainNode）→ 全体 → スピーカー。<audio> で読めないときは Web Audio で読み込んで再生 */
+let ACTX = null, MASTER = null, ANALYSER = null;
+function actx(){ if(!ACTX){ const C = window.AudioContext || window.webkitAudioContext; if(C){ try{ ACTX = new C(); }catch(e){} } } return ACTX; }
+function graph(){
+  const ctx = actx(); if(!ctx) return null;
+  if(!MASTER){ MASTER = ctx.createGain(); ANALYSER = ctx.createAnalyser(); ANALYSER.fftSize = 2048; MASTER.connect(ANALYSER); ANALYSER.connect(ctx.destination); }
+  return ctx;
+}
+window.__audioLevel = () => { if(!ANALYSER) return null; const d = new Float32Array(ANALYSER.fftSize); ANALYSER.getFloatTimeDomainData(d); let s = 0; for(const v of d) s += v * v; return Math.sqrt(s / d.length); };
+async function decodeBlob(blob){
+  const ctx = actx(); if(!ctx) throw new Error("AudioContext が使えません");
+  const buf = await blob.arrayBuffer();
+  return await new Promise((res, rej) => { const r = ctx.decodeAudioData(buf, res, rej); if(r && r.then) r.then(res, rej); });
+}
+/* ITU-R BS.1770（K特性・ゲート付き）で、使う範囲の大きさ（LUFS）を測る。ffmpeg の ebur128 と同じ方法 */
+function loudnessOf(buf, startS, durS){
+  const fs = buf.sampleRate, n0 = Math.max(0, Math.floor(startS * fs)), n1 = Math.min(buf.length, Math.floor((startS + durS) * fs));
+  let f0 = 1681.974450955533, G = 3.999843853973347, Q = 0.7071752369554196, K = Math.tan(Math.PI * f0 / fs);
+  const Vh = Math.pow(10, G / 20), Vb = Math.pow(Vh, 0.4996667741545416), a0 = 1 + K / Q + K * K;
+  const b0 = (Vh + Vb * K / Q + K * K) / a0, b1 = 2 * (K * K - Vh) / a0, b2 = (Vh - Vb * K / Q + K * K) / a0;
+  const a1 = 2 * (K * K - 1) / a0, a2 = (1 - K / Q + K * K) / a0;
+  f0 = 38.13547087602444; Q = 0.5003270373238773; K = Math.tan(Math.PI * f0 / fs);
+  const r0 = 1 + K / Q + K * K, ra1 = 2 * (K * K - 1) / r0, ra2 = (1 - K / Q + K * K) / r0;
+  const step = Math.round(fs * 0.1), nb = Math.floor((n1 - n0) / step);
+  if(nb < 4) throw new Error("範囲が短すぎます");
+  const sums = new Float64Array(nb); let peak = 0;
+  const nch = Math.min(buf.numberOfChannels, 2);
+  for(let ch = 0; ch < nch; ch++){
+    const x = buf.getChannelData(ch);
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0, z1 = 0, z2 = 0, acc = 0, cnt = 0, k = 0;
+    for(let i = n0, e = n0 + nb * step; i < e; i++){
+      const v = x[i], av = v < 0 ? -v : v; if(av > peak) peak = av;
+      const y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+      const z = y - 2 * y1 + y2 - ra1 * z1 - ra2 * z2;
+      x2 = x1; x1 = v; y2 = y1; y1 = y; z2 = z1; z1 = z;
+      acc += z * z; if(++cnt === step){ sums[k++] += acc; acc = 0; cnt = 0; }
+    }
+  }
+  const L = (z) => -0.691 + 10 * Math.log10(z), blocks = [];
+  for(let j = 0; j + 3 < nb; j++) blocks.push((sums[j] + sums[j+1] + sums[j+2] + sums[j+3]) / (4 * step));
+  const g1 = blocks.filter((z) => z > 0 && L(z) > -70);
+  const pk = Math.round(20 * Math.log10(peak || 1e-9) * 10) / 10;
+  if(!g1.length) return {lufs:null, peak_db:pk};
+  const rel = L(g1.reduce((s, z) => s + z, 0) / g1.length) - 10;
+  const g2 = g1.filter((z) => L(z) > rel);
+  return {lufs: Math.round(L(g2.reduce((s, z) => s + z, 0) / g2.length) * 10) / 10, peak_db: pk};
+}
+const fmtDb = (g) => `${g > 0 ? "+" : ""}${(Math.round(g * 10) / 10).toFixed(1)} dB`;
+function matchOn(){ if(S) return !!S.settings.match_loudness; const m = $("#match"); return m ? m.checked : true; }
+function autoGain(a){ return a.embedded ? 0 : (matchOn() && a.gain_auto != null ? a.gain_auto : 0); }
+function gainFor(a){ return S && a.gain_db != null ? a.gain_db : autoGain(a); }
+function setupNeed(){
+  /* 曲はスペースキーで流れ始め、lead_s 秒後に計算が始まり、計算の終わりまで流れる → 必要な長さ＝待ち＋計算 */
+  if(S) return (S.settings.lead_s || 0) + S.settings.task_s;
+  if($("#test") && $("#test").checked) return TEST.lead_s + TEST.task_s;
+  const task = parseFloat($("#task_s") ? $("#task_s").value : ""), lead = parseFloat($("#lead_s") ? $("#lead_s").value : "");
+  return (isFinite(lead) && lead >= 0 ? lead : DEFAULTS.lead_s) + (isFinite(task) && task > 0 ? task : DEFAULTS.task_s);
+}
+async function toWebAudio(a){
+  if(a.mode === "webaudio" || a.decoding) return;
+  a.decoding = true; refreshAudioRows();
+  try{ a.buffer = a.pcm || await decodeBlob(a.file); a.mode = "webaudio"; a.duration = a.buffer.duration; a.error = false; }
+  catch(e){ a.error = true; }
+  a.decoding = false; refreshAudioRows();
+  if(!a.error) measureTrack(a.code);
+}
+async function measureTrack(code){
+  const a = AUD[code]; if(!a || a.embedded || a.error) return;
+  const token = a.mtoken = (a.mtoken || 0) + 1;
+  a.measuring = true; refreshAudioRows();
+  try{
+    if(!a.pcm) a.pcm = a.buffer || await decodeBlob(a.file);
+    if(AUD[code] !== a || token !== a.mtoken) return;
+    const r = loudnessOf(a.pcm, OFFS[code] || 0, setupNeed());
+    a.lufs = r.lufs; a.peak_db = r.peak_db; a.measure_error = null;
+    let g = r.lufs == null ? 0 : TARGET_LUFS - r.lufs, capped = false;
+    if(r.peak_db + g > -1){ g = -1 - r.peak_db; capped = true; }
+    a.gain_auto = Math.round(g * 100) / 100; a.capped = capped;
+    if(a.duration == null) a.duration = a.pcm.duration;
+  }catch(e){ a.lufs = null; a.gain_auto = null; a.measure_error = String(e && e.message || e); }
+  if(AUD[code] === a && token === a.mtoken){ a.measuring = false; refreshAudioRows(); }
+}
+function releaseTrack(a){
+  try{ if(a.node){ a.node.stopping = true; a.node.src.stop(); } a.el.pause(); if(a.snode) a.snode.disconnect(); if(a.gnode) a.gnode.disconnect(); URL.revokeObjectURL(a.url); }catch(e){}
+  a.pcm = null; a.buffer = null; a.mtoken = (a.mtoken || 0) + 1;
+}
+function attachAudio(code, blob, embedded=false){
+  if(AUD[code]) releaseTrack(AUD[code]);
+  const em = embedded ? EMB[code].meta : null;
+  const url = URL.createObjectURL(blob);
+  const el = new Audio(); el.preload = "auto";
+  const a = AUD[code] = {code, file:blob, url, el, duration: em ? em.dur_s : null, name: em ? em.name : blob.name, size:blob.size, error:false, mode:"element",
+    embedded:!!em, lufs: em ? em.lufs_after : null, peak_db: em ? em.tp_after : null, gain_auto: em ? 0 : null,
+    source: em ? em.source : null, source_start_s: em ? em.start_s : null};
+  if(location.hash === "#webaudio"){ toWebAudio(a); return; }
+  el.addEventListener("loadedmetadata", () => { if(a.mode === "element" && isFinite(el.duration)){ a.duration = el.duration; refreshAudioRows(); } });
+  el.addEventListener("error", () => { if(AUD[code] === a) toWebAudio(a); });
+  el.src = url;
+  if(!a.embedded) measureTrack(code);
+  refreshAudioRows();
+}
+function attachEmbedded(force){ Object.keys(EMB).forEach((c) => { if(force || !AUD[c]){ const b = embeddedBlob(c); if(b) attachAudio(c, b, true); } }); }
+function hookElement(a){
+  const ctx = graph(); if(!ctx) return false;
+  if(!a.gnode){ a.gnode = ctx.createGain(); a.gnode.connect(MASTER); }
+  if(a.mode === "element" && !a.snode){ try{ a.snode = ctx.createMediaElementSource(a.el); a.snode.connect(a.gnode); }catch(e){ return false; } }
+  return true;
+}
+function playFrom(a, offset, vol, onPlaying, onEnded){
+  const ctx = graph(); if(ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+  const lin = vol * Math.pow(10, gainFor(a) / 20);
+  if(a.mode === "webaudio"){
+    hookElement(a);
+    const g = a.gnode.gain; g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(lin, ctx.currentTime);
+    const src = ctx.createBufferSource(); src.buffer = a.buffer; src.connect(a.gnode);
+    const node = {src, t0:ctx.currentTime, off:offset, stopping:false};
+    src.onended = () => { if(!node.stopping && onEnded) onEnded(); };
+    src.start(0, Math.min(offset, Math.max(0, a.buffer.duration - 0.05)));
+    a.node = node;
+    if(onPlaying) onPlaying();
+    return Promise.resolve();
+  }
+  const el = a.el;
+  el.pause(); el.muted = false;
+  if(hookElement(a)){ el.volume = 1; const g = a.gnode.gain; g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(lin, ctx.currentTime); }
+  else el.volume = Math.min(1, lin);
+  try{ el.currentTime = offset; }catch(e){}
+  el.onplaying = onPlaying || null; el.onended = onEnded || null;
+  return el.play();
+}
+function fadeOut(a, ms){
+  if(a.gnode && ACTX){ const now = ACTX.currentTime, g = a.gnode.gain; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + ms / 1000); return; }
+  const el = a.el, v0 = el.volume, t0 = performance.now();
+  const step = () => { const p = (performance.now() - t0) / ms; if(p >= 1) el.volume = 0; else { el.volume = Math.max(0, v0 * (1 - p)); setTimeout(step, 30); } };
+  step();
+}
+function stopPlay(a, fadeMs){
+  return new Promise((res) => {
+    fadeOut(a, fadeMs);
+    setTimeout(() => {
+      let pos = null;
+      if(a.mode === "webaudio"){ const n = a.node; if(n){ n.stopping = true; pos = n.off + (ACTX.currentTime - n.t0); try{ n.src.stop(); }catch(e){} a.node = null; } }
+      else { a.el.onended = null; a.el.onplaying = null; pos = a.el.currentTime; a.el.pause(); }
+      res(pos);
+    }, fadeMs + 30);
+  });
+}
+function autoAssign(files){
+  const got = [];
+  for(const f of files){
+    const n = f.name.normalize("NFKC").toLowerCase();
+    let code = null;
+    const m = n.match(/^([a-f])[_\-\s.]/);
+    if(m) code = m[1].toUpperCase();
+    else for(const [c, kws] of Object.entries(KEYWORDS)){ if(kws.some((k) => n.includes(k.toLowerCase()))){ code = c; break; } }
+    if(code){ attachAudio(code, f); got.push(`${code}：${f.name}`); }
+  }
+  return got;
+}
+let previewing = null;
+function preview(code){
+  const a = AUD[code]; if(!a || a.error || a.decoding) return;
+  if(previewing){ const same = previewing.code === code; stopPreview(); refreshAudioRows(); if(same) return; }
+  const vol = (parseInt($("#vol") ? $("#vol").value : "100", 10)) / 100;
+  playFrom(a, a.embedded ? 0 : (OFFS[code] || 0), vol).catch(() => { if(a.mode === "element") toWebAudio(a); });
+  previewing = {code, a, t:setTimeout(() => { stopPreview(); refreshAudioRows(); }, 10000)};
+  refreshAudioRows();
+}
+function stopPreview(){ if(previewing){ clearTimeout(previewing.t); stopPlay(previewing.a, 80); previewing = null; } }
+function unlockAudio(){
+  const ctx = graph(); if(ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+}
+async function startAudio(code, rec){
+  const a = AUD[code];
+  rec.audio = {file: a ? a.name : null, mode: a ? a.mode : null, gain_db: a ? gainFor(a) : null, play_req: stamp()};
+  if(!a){ if(code !== "G") logEvent("audio_missing", {code}); return; }
+  const onPlaying = () => { if(!rec.audio.playing){ rec.audio.playing = stamp(); logEvent("audio_playing", {code, file:a.name, mode:a.mode, gain_db:rec.audio.gain_db}); } };
+  try{ await playFrom(a, S.audio_meta[code] ? S.audio_meta[code].offset_s || 0 : 0, S.settings.volume / 100, onPlaying, () => logEvent("audio_ended_early", {code})); }
+  catch(err){ logEvent("audio_error", {code, msg:String(err && err.message || err)}); banner("音が再生できませんでした（実験者に知らせてください）", 5000); }
+}
+function fadeAudio(code, ms){ const a = AUD[code]; if(a){ fadeOut(a, ms); logEvent("audio_fade", {code, ms}); } }
+function stopAudio(code, rec, fadeMs=150){
+  const a = AUD[code]; if(!a) return;
+  stopPlay(a, fadeMs).then((pos) => { if(rec.audio){ rec.audio.stopped = stamp(); if(pos != null) rec.audio.position_s = Math.round(pos * 100) / 100; persist(); } });
+}
+
+/* ---------- 書き出し（CSV・ZIP） ---------- */
+function csv(rows, cols){
+  const q = (v) => { if(v === null || v === undefined) return ""; const s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  return "﻿" + [cols.join(","), ...rows.map((r) => cols.map((c) => q(r[c])).join(","))].join("\r\n") + "\r\n";
+}
+const CRC_T = (() => { const t = new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i=0;i<u8.length;i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+  const d = new Date();
+  const dt = (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+  const dd = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  for(const f of files){
+    const name = enc.encode(f.name), data = typeof f.data === "string" ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dt, true); lh.setUint16(12, dd, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true);
+    lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, dt, true); ch.setUint16(14, dd, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+    ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true);
+    ch.setUint32(38, 0, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const cd = central.reduce((s, a) => s + a.length, 0);
+  const eo = new DataView(new ArrayBuffer(22));
+  eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, files.length, true); eo.setUint16(10, files.length, true);
+  eo.setUint32(12, cd, true); eo.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(eo.buffer)], {type:"application/zip"});
+}
+let DL;   // undefined: まだ / null: 使えない
+async function getDownloads(){
+  if(DL !== undefined) return DL;
+  if(window.claude && typeof window.claude.use === "function"){ try{ DL = await window.claude.use("downloads"); }catch(e){ DL = null; } return DL; }
+  return null;   // まだ用意されていないだけかもしれないので、覚えずに次回また確かめる
+}
+const inArtifact = () => !!(window.claude && typeof window.claude.use === "function");
+async function saveFile(filename, data){
+  const dl = await getDownloads();
+  if(dl){
+    try{ await dl.save({filename, data}); return {ok:true}; }
+    catch(err){
+      const code = (err && err.code) || "unavailable";
+      const msg = {declined:"保存は取り消されました。", rate_limited:"確認画面が開いています。少し待ってからもう一度押してください。"}[code]
+        || "このページの中では保存できませんでした。HTMLファイル版をパソコンで開いて使ってください（データはこの端末に残っています）。";
+      return {ok:false, code, msg};
+    }
+  }
+  if(inArtifact()) return {ok:false, code:"unavailable", msg:"このページの中では保存できませんでした。HTMLファイル版をパソコンで開いて使ってください（データはこの端末に残っています）。"};
+  try{
+    const blob = data instanceof Blob ? data : new Blob([data], {type:"text/plain"});
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 3000);
+    return {ok:true};
+  }catch(e){ return {ok:false, code:"error", msg:"保存できませんでした：" + e}; }
+}
+
+/* セッション → 表 */
+function baseOf(s){ return {participant_id:s.participant_id, week:s.week, session_id:s.session_id, order_no:s.order_no, test_mode:s.test_mode?1:0}; }
+function tables(s){
+  const base = baseOf(s), trials = [], summary = [], events = [], quest = [];
+  const pushTrials = (blocks, phase, pos, code) => (blocks || []).forEach((b) => b.entries.forEach((x) => trials.push({
+    ...base, phase, position:pos, condition:code, op:b.op, sheet_no:b.sheet_no, sheet_id:b.sheet_id, n:x.n, k:x.k, row:x.row, col:x.col,
+    left:x.a, top:x.b, correct_answer:x.ans, response:x.resp, response_raw:x.raw, is_correct:x.ok,
+    rt_ms:x.rt_ms, first_key_ms:x.first_ms, n_backspace:x.bs, key_source:x.src, t_in_task_ms:x.t_ms, answer_iso:x.iso, epoch_ms:x.epoch_ms,
+  })));
+  const taskCols = (blocks, taskS) => {
+    // 正答数・解答数（確定した数）・誤答数・正答率、1分ごとの内訳、表の枚数
+    const has = !!(blocks && blocks.length), e = has ? blocks.flatMap((b) => b.entries) : [];
+    const ok = e.filter((x) => x.ok), o = {};
+    o.correct = has ? ok.length : null; o.attempted = has ? e.length : null; o.wrong = has ? e.length - ok.length : null;
+    o.accuracy = e.length ? Math.round(ok.length / e.length * 10000) / 10000 : null;
+    o.correct_per_min = has && taskS ? Math.round(ok.length / (taskS / 60) * 100) / 100 : null;
+    o.rt_median_ms = median(ok.map((x) => x.rt_ms));
+    for(let m = 1; m <= 3; m++){
+      const inM = e.filter((x) => x.t_ms >= (m - 1) * 60000 && x.t_ms < m * 60000);
+      o[`m${m}_correct`] = has && taskS > (m - 1) * 60 ? inM.filter((x) => x.ok).length : null;
+      o[`m${m}_attempted`] = has && taskS > (m - 1) * 60 ? inM.length : null;
+    }
+    o.sheets_started = has ? blocks.length : null;
+    o.sheets_completed = has ? blocks.filter((b) => b.completed_all).length : null;
+    o.first_sheet = has ? blocks[0].sheet_id : null;
+    o.ime_warnings = (blocks || []).reduce((s, b) => s + (b.ime_warn || 0), 0);
+    o.leave_window = (blocks || []).reduce((s, b) => s + (b.blur || 0), 0);
+    return o;
+  };
+  if(s.practice){
+    pushTrials(s.practice.blocks, "practice", 0, "P");
+    summary.push({...base, phase:"practice", position:0, condition:"P", condition_label:"練習", task_start_iso:s.practice.start && s.practice.start.iso, task_start_epoch_ms:s.practice.start && s.practice.start.epoch_ms, task_end_iso:s.practice.end && s.practice.end.iso, ...taskCols(s.practice.blocks, s.settings.practice_s)});
+  }
+  for(let pos=1; pos<=7; pos++){
+    const c = s.conds[pos]; if(!c) continue;
+    pushTrials(c.task && c.task.blocks, "main", pos, c.code);
+    const r = (c.ratings && c.ratings.items) || {}, am = s.audio_meta[c.code] || {};
+    const a1 = c.ag_pre || {}, a2 = c.ag_post || {}, au = (c.task && c.task.audio) || {};
+    summary.push({
+      ...base, phase:"main", position:pos, condition:c.code, condition_label:COND[c.code].label,
+      audio_file: am.file || (c.code==="G" ? "（無音）" : null), audio_offset_s: am.offset_s ?? null, audio_duration_s: am.duration_s ?? null, volume_pct: s.settings.volume,
+      audio_embedded: am.embedded ? 1 : (am.file ? 0 : null), audio_lufs: am.lufs ?? null, audio_gain_db: am.gain_db ?? null,
+      lead_start_iso: c.task && c.task.lead && c.task.lead.start && c.task.lead.start.iso, lead_start_epoch_ms: c.task && c.task.lead && c.task.lead.start && c.task.lead.start.epoch_ms,
+      rest_start_iso: c.rest && c.rest.start && c.rest.start.iso, rest_start_epoch_ms: c.rest && c.rest.start && c.rest.start.epoch_ms, rest_end_iso: c.rest && c.rest.end && c.rest.end.iso,
+      task_start_iso: c.task && c.task.start && c.task.start.iso, task_start_epoch_ms: c.task && c.task.start && c.task.start.epoch_ms,
+      task_end_iso: c.task && c.task.end && c.task.end.iso, task_end_epoch_ms: c.task && c.task.end && c.task.end.epoch_ms,
+      audio_playing_iso: au.playing && au.playing.iso, audio_playing_epoch_ms: au.playing && au.playing.epoch_ms, audio_stop_iso: au.stopped && au.stopped.iso, audio_position_at_stop_s: au.position_s ?? null,
+      ...taskCols(c.task && c.task.blocks, s.settings.task_s ?? (s.settings.block_s ? s.settings.block_s * 3 : null)),
+      ag_pre_pleasure:a1.pleasure ?? null, ag_pre_arousal:a1.arousal ?? null, ag_pre_rt_ms:a1.rt_ms ?? null,
+      ag_post_pleasure:a2.pleasure ?? null, ag_post_arousal:a2.arousal ?? null, ag_post_rt_ms:a2.rt_ms ?? null,
+      d_pleasure:(a1.pleasure!=null && a2.pleasure!=null) ? a2.pleasure - a1.pleasure : null,
+      d_arousal:(a1.arousal!=null && a2.arousal!=null) ? a2.arousal - a1.arousal : null,
+      r_like:r.like ?? null, r_familiar:r.familiar ?? null, r_bored:r.bored ?? null, r_disturb:r.disturb ?? null,
+      r_lyrics:r.lyrics ?? null, song_has_lyrics: c.code === "G" ? null : ((c.code === "A" ? s.self_lyrics : COND[c.code].lyrics) ? 1 : 0),
+      r_concentrate:r.concentrate ?? null, r_fatigue:r.fatigue ?? null, ratings_rt_ms: c.ratings ? c.ratings.rt_ms : null,
+      ratings_end_iso: c.ratings && c.ratings.done && c.ratings.done.iso,
+      break_before: (s.break && s.break.answer === "yes" && pos === 5) ? 1 : 0,
+      skipped: (c.skipped || []).join(" "), restarts: c.restarts || 0,
+    });
+  }
+  s.events.forEach((e) => events.push({...base, iso:e.iso, epoch_ms:e.epoch_ms, perf_ms:e.perf_ms, type:e.type, phase:e.phase, position:e.pos, condition:e.code, detail:e.detail}));
+  const qs = (form, rec, spec) => { if(!rec) return; spec.filter((x) => x.id).forEach((it) => { [it, ...(it.follow || [])].forEach((q) => { if(q.id in (rec.answers || {})) quest.push({...base, form, item_id:q.id, question:q.q, answer:rec.answers[q.id]}); }); }); };
+  qs("pre", s.pre, PRE); qs("post", s.post, POST);
+  const session = [{
+    ...base, status:s.status, created_at:s.created_at, finished_at:s.finished_at || "", app_version:s.app_version,
+    order:s.order.join(""), sheet_seed:s.sheet_seed, rest_s:s.settings.rest_s, lead_s:s.settings.lead_s ?? "", task_s:s.settings.task_s ?? "", target_lufs:s.settings.target_lufs ?? "", match_loudness:s.settings.match_loudness ? 1 : 0, practice_s:s.settings.practice_s,
+    volume_pct:s.settings.volume, practice:s.settings.practice === false ? 0 : 1, pre_short:s.pre_short?1:0, break_answer:s.break ? s.break.answer : "", break_s: s.break && s.break.dur_s != null ? s.break.dur_s : "",
+    self_song: s.self_song || "", self_lyrics: s.self_lyrics == null ? "" : (s.self_lyrics ? 1 : 0), audio_files: CODES.map((c) => `${c}=${(s.audio_meta[c]||{}).file || ""}`).join(" | "),
+    user_agent:s.env.ua, screen:s.env.screen, timezone:s.env.tz,
+  }];
+  return {trials, summary, events, quest, session};
+}
+const TRIAL_COLS = ["participant_id","week","session_id","order_no","test_mode","phase","position","condition","op","sheet_no","sheet_id","n","k","row","col","left","top","correct_answer","response","response_raw","is_correct","rt_ms","first_key_ms","n_backspace","key_source","t_in_task_ms","answer_iso","epoch_ms"];
+const SUM_COLS = ["participant_id","week","session_id","order_no","test_mode","phase","position","condition","condition_label","audio_file","audio_offset_s","audio_duration_s","audio_embedded","audio_lufs","audio_gain_db","volume_pct",
+  "correct","attempted","wrong","accuracy","correct_per_min","rt_median_ms","m1_correct","m2_correct","m3_correct","m1_attempted","m2_attempted","m3_attempted","sheets_started","sheets_completed","first_sheet",
+  "ag_pre_pleasure","ag_pre_arousal","ag_post_pleasure","ag_post_arousal","d_pleasure","d_arousal","ag_pre_rt_ms","ag_post_rt_ms",
+  "r_like","r_familiar","r_bored","r_disturb","r_lyrics","song_has_lyrics","r_concentrate","r_fatigue","ratings_rt_ms",
+  "rest_start_iso","rest_start_epoch_ms","rest_end_iso","lead_start_iso","lead_start_epoch_ms","task_start_iso","task_start_epoch_ms","task_end_iso","task_end_epoch_ms","audio_playing_iso","audio_playing_epoch_ms","audio_stop_iso","audio_position_at_stop_s","ratings_end_iso",
+  "break_before","ime_warnings","leave_window","skipped","restarts"];
+const EV_COLS = ["participant_id","week","session_id","order_no","test_mode","iso","epoch_ms","perf_ms","type","phase","position","condition","detail"];
+const Q_COLS = ["participant_id","week","session_id","order_no","test_mode","form","item_id","question","answer"];
+const SES_COLS = ["participant_id","week","session_id","order_no","test_mode","status","created_at","finished_at","app_version","order","sheet_seed","rest_s","lead_s","task_s","target_lufs","match_loudness","practice","practice_s","volume_pct","pre_short","break_answer","break_s","self_song","self_lyrics","audio_files","user_agent","screen","timezone"];
+function fileBase(s){ return `${s.test_mode ? "TEST_" : ""}${s.session_id}`; }
+function sessionZip(s){
+  const t = tables(s), b = fileBase(s);
+  return makeZip([
+    {name:`${b}_summary.csv`, data:csv(t.summary, SUM_COLS)},
+    {name:`${b}_trials.csv`, data:csv(t.trials, TRIAL_COLS)},
+    {name:`${b}_questionnaire.csv`, data:csv(t.quest, Q_COLS)},
+    {name:`${b}_events.csv`, data:csv(t.events, EV_COLS)},
+    {name:`${b}_session.csv`, data:csv(t.session, SES_COLS)},
+    {name:`${b}_raw.json`, data:JSON.stringify(s, null, 1)},
+  ]);
+}
+
+/* ---------- アンケートの中身（毎週同じ文面・同じ尺度。背景の質問だけ初回のみ） ---------- */
+const F = (n) => Array.from({length:n}, (_, i) => `${i+1}番目`);
+const FREQ4 = ["よく聴く","ときどき聴く","ほとんど聴かない","まったく聴かない"];
+const PRE = [
+  {sec:"あなたが選んだ曲について", full:true},
+  {id:"song_title", type:"text", q:"曲名", req:true, full:true},
+  {id:"song_artist", type:"text", q:"アーティスト名", req:true, full:true},
+  {id:"song_reasons", type:"multi", q:"この曲を選んだ理由（当てはまるものをすべて）", opts:["好きだから","聴き慣れているから","集中できるから","気分が上がるから","落ち着くから","その他"], req:true, full:true, followOn:"その他",
+    follow:[{id:"song_reason_other", type:"text", q:"その他の理由"}]},
+  {id:"song_freq", type:"choice", q:"この曲を聴く頻度", opts:["ほぼ毎日","週に数回","週に1回くらい","月に数回","それ以下"], req:true, full:true},
+  {id:"song_period", type:"choice", q:"この曲をいつ頃から聴いているか", opts:["1か月未満","1か月〜半年未満","半年〜1年未満","1〜3年未満","3年以上"], req:true, full:true},
+  {id:"song_while_work", type:"choice", q:"作業や勉強をしながら、この曲を聴くか", opts:FREQ4, req:true, full:true},
+  {id:"work_song", type:"choice", q:"作業や勉強をするときに聴く、決まった曲はあるか", opts:["今回選んだ曲がそれにあたる","今回選んだ曲とは別にある","決まった曲はない"], req:true, full:true},
+  {sec:"ふだんの音楽について", full:true},
+  {id:"daily_listen", type:"choice", q:"1日に音楽を聴く時間", opts:["聴かない","30分未満","30分〜1時間","1〜2時間","2時間以上"], req:true, full:true},
+  {id:"work_music", type:"choice", q:"作業や勉強をしながら、音楽を聴くか", opts:FREQ4, req:true, full:true},
+  {id:"work_lyrics", type:"choice", q:"作業や勉強をしながら、歌詞のある曲を聴くか", opts:FREQ4, req:true, full:true},
+  {id:"instrument", type:"choice", q:"楽器や歌の経験", opts:["なし","あり"], req:true, full:true, followOn:"あり",
+    follow:[{id:"instrument_kind", type:"text", q:"種類"},{id:"instrument_years", type:"number", q:"年数", suffix:"年", min:0, max:60, step:0.5}]},
+  {sec:"あなたについて", full:true},
+  {id:"age", type:"number", q:"年齢（任意）", suffix:"歳", min:15, max:99, step:1, full:true},
+  {sec:"今日の状態（毎週同じ質問です）"},
+  {id:"sleep_h", type:"number", q:"昨夜の睡眠時間", suffix:"時間", min:0, max:16, step:0.5, req:true},
+  {id:"caffeine", type:"choice", q:"今日、カフェイン（コーヒー・お茶・エナジードリンクなど）をとったか", opts:["とっていない","とった"], req:true, followOn:"とった",
+    follow:[{id:"caffeine_time", type:"time", q:"最後にとった時刻"}]},
+  {id:"sleepy", type:"scale7", q:"今の眠気", lo:"まったく眠くない", hi:"とても眠い", req:true},
+  {id:"tired", type:"scale7", q:"今の疲れ", lo:"まったく疲れていない", hi:"とても疲れている", req:true},
+  {id:"issue", type:"choice", q:"体調や聞こえ方で、今日の実験に差し支えることがあるか", opts:["ない","ある"], req:true, followOn:"ある",
+    follow:[{id:"issue_detail", type:"text", q:"内容"}]},
+];
+const POST = [
+  {sec:"全体について"},
+  {id:"fatigue_total", type:"scale7", q:"全体を通して、どのくらい疲れましたか", lo:"まったく疲れなかった", hi:"とても疲れた", req:true},
+  {id:"focus_kept", type:"scale7", q:"最後まで集中が続きましたか", lo:"まったく続かなかった", hi:"最後まで続いた", req:true},
+  {id:"hr_bother", type:"scale7", q:"心拍計の着け心地は気になりましたか", lo:"まったく気にならなかった", hi:"とても気になった", req:true},
+  {id:"key_ease", type:"scale7", q:"キーボードでの答えの入力はやりやすかったですか", lo:"とてもやりにくい", hi:"とてもやりやすい", req:true},
+  {sec:"当てはまるものを選んでください"},
+  {id:"length", type:"choice", q:"実験の長さ", opts:["短い","ちょうどよい","少し長い","長すぎる"], req:true},
+  {id:"focus_lost", type:"choice", q:"集中が切れたと感じたのは", opts:["切れなかった", ...F(7).map((x)=>x+"ごろから")], req:true},
+  {id:"break_need", type:"choice", q:"休憩は必要だと感じたか", opts:["いらない","途中で1回ほしい","もっとほしい"], req:true},
+  {id:"volume", type:"choice", q:"曲の音量", opts:["小さい","ちょうどよい","大きい"], req:true},
+  {id:"diff_same", type:"choice", q:"100マス計算の難しさは、条件ごとに違うと感じたか", opts:["同じだった","違うものがあった"], req:true, followOn:"違うものがあった",
+    follow:[{id:"diff_which", type:"text", q:"何番目か"}]},
+  {id:"easiest", type:"choice", q:"いちばん計算しやすかった条件", opts:[...F(7), "わからない"], req:true, followOn:"*", follow:[{id:"easiest_reason", type:"text", q:"理由"}]},
+  {id:"hardest", type:"choice", q:"いちばん計算しにくかった条件", opts:[...F(7), "わからない"], req:true, followOn:"*", follow:[{id:"hardest_reason", type:"text", q:"理由"}]},
+  {id:"known", type:"choice", q:"この実験より前から知っていた曲（自分で選んだ曲を除く）", opts:["ない","ある"], req:true, followOn:"ある",
+    follow:[{id:"known_which", type:"text", q:"何番目か・曲名"}]},
+  {id:"paper_vs_pc", type:"choice", q:"紙の100マス計算と比べて、画面での計算は", opts:["やりやすい","同じくらい","やりにくい","紙でやったことがない"], req:true},
+  {sec:"自由記述（任意）"},
+  {id:"free_unclear", type:"textarea", q:"手順や説明で、分かりにくかったところ"},
+  {id:"free_purpose", type:"textarea", q:"この実験の目的について、気づいたこと・予想したこと"},
+  {id:"free_other", type:"textarea", q:"その他（体調の変化、気になった音など）"},
+];
+/* 計算の後の評定（毎週同じ）。曲についての質問（song）は無音の条件では出さない。歌詞の質問（lyricsOnly）は歌詞のある曲だけ。
+   Affect Grid・集中・作業の疲れは、無音を含むすべての条件で同じように聞く。
+   「曲への飽き」と「計算作業による疲れ」は、別の欄で別の質問として聞く */
+const RATE = [
+  {id:"like", q:"この曲は好きですか", lo:"まったく好きではない", hi:"とても好き", song:true},
+  {id:"familiar", q:"この曲をどの程度聴き慣れていますか", lo:"まったく聴き慣れていない", hi:"とても聴き慣れている", song:true},
+  {id:"bored", q:"今、この曲にどの程度飽きを感じていますか", lo:"まったく感じていない", hi:"とても感じている", song:true},
+  {id:"disturb", q:"曲は計算のじゃまになりましたか", lo:"まったくならなかった", hi:"とてもなった", song:true},
+  {id:"lyrics", q:"歌詞（ことば）に注意が向きましたか", lo:"まったく向かなかった", hi:"とても向いた", song:true, lyricsOnly:true},
+  {id:"concentrate", q:"計算に集中できましたか", lo:"まったくできなかった", hi:"とてもできた"},
+  {id:"fatigue", q:"計算作業で、どのくらい疲れましたか（頭や体の疲れ）", lo:"まったく疲れなかった", hi:"とても疲れた"},
+];
+
+/* ---------- 画面の部品 ---------- */
+const app = $("#app");
+function setTheme(t){ document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
+let bannerT = null;
+function banner(text, ms=4000){
+  let b = $("#banner"); if(!b){ b = document.createElement("div"); b.id = "banner"; b.className = "banner"; document.body.appendChild(b); }
+  b.textContent = text; b.hidden = false; clearTimeout(bannerT); bannerT = setTimeout(() => { b.hidden = true; }, ms);
+}
+function stage(inner){ app.innerHTML = `<div class="stage">${inner}</div>${xButton()}`; bindXButton(); window.scrollTo(0, 0); }
+function card(inner, prog){ return `<div class="card">${prog ? `<div class="progress">${esc(prog)}</div>` : ""}${inner}</div>`; }
+function blurActive(){ if(document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }
+
+/* 実験者メニュー（右下の小さなボタン） */
+function xButton(){ return `<button class="xbtn" id="xbtn" type="button" title="実験者用メニュー">実験者</button><div class="xpanel" id="xpanel" hidden></div>`; }
+function bindXButton(){
+  const b = $("#xbtn"); if(!b) return;
+  b.addEventListener("click", () => { const p = $("#xpanel"); if(p.hidden) openX(); else closeX(); });
+}
+function phaseName(ph){
+  return ({welcome:"はじめの説明", pre:"事前アンケート", howto:"操作の説明", practice:"練習", ready:"条件の準備", rest:"安静", ag_pre:"評定①", task:"計算（曲あり）", ratings:"評定②", break:"休憩", post:"事後アンケート", end:"終了"})[ph.type] || ph.type;
+}
+function openX(){
+  const p = $("#xpanel"), ph = S.phases[S.phase_idx] || {};
+  const where = ph.pos ? `条件 ${ph.pos}/7（${S.order[ph.pos-1]}：${COND[S.order[ph.pos-1]].label}）・${phaseName(ph)}` : phaseName(ph);
+  p.innerHTML = `<h3>実験者用メニュー</h3>
+    <div class="hint">${esc(S.participant_id)}・${S.week ? "第"+S.week+"週" : "予備予備"}・順番号${S.order_no}${S.test_mode ? "・テスト" : ""}</div>
+    <div style="margin-top:6px">いま：<b>${esc(where)}</b></div>
+    <div class="row"><button class="btn" id="xm">時刻マーカーを記録</button><button class="btn" id="xsave">途中までを保存</button></div>
+    <div class="row"><button class="btn" id="xskip">この段階をとばす</button><button class="btn danger" id="xabort">中止する</button></div>
+    <div class="msg" id="xmsg"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" id="xclose">閉じる</button></div>`;
+  p.hidden = false;
+  $("#xm").onclick = () => { const st = stamp(); S.markers.push(st); logEvent("marker", {n:S.markers.length}); persist(); $("#xmsg").textContent = `マーカー${S.markers.length}：${st.iso.slice(11,23)}`; };
+  $("#xsave").onclick = async () => { persist(); const r = await saveFile(fileBase(S) + "_partial.zip", sessionZip(S)); $("#xmsg").textContent = r.ok ? "保存しました。" : r.msg; };
+  $("#xskip").onclick = (e) => {
+    if(e.currentTarget.dataset.armed){ closeX(); skipPhase(); return; }
+    e.currentTarget.dataset.armed = "1"; e.currentTarget.textContent = "もう一度押すと、とばす";
+  };
+  $("#xabort").onclick = (e) => {
+    if(e.currentTarget.dataset.armed){ closeX(); abortSession(); return; }
+    e.currentTarget.dataset.armed = "1"; e.currentTarget.textContent = "もう一度押すと中止";
+  };
+  $("#xclose").onclick = closeX;
+}
+function closeX(){ const p = $("#xpanel"); if(p) p.hidden = true; blurActive(); }
+
+/* ---------- 進行 ---------- */
+function buildPhases(practice=true){
+  const P = [{type:"welcome"}, {type:"pre"}, {type:"howto"}];
+  if(practice) P.push({type:"practice"});
+  for(let k=1; k<=7; k++){
+    P.push({type:"ready", pos:k}, {type:"rest", pos:k}, {type:"ag_pre", pos:k}, {type:"task", pos:k}, {type:"ratings", pos:k});
+  }
+  P.push({type:"post"}, {type:"end"});
+  return P;
+}
+function hasLyrics(code){ return code === "A" ? !!(S && S.self_lyrics) : !!COND[code].lyrics; }
+const curCond = () => { const ph = S.phases[S.phase_idx]; return ph && ph.pos ? S.conds[ph.pos] : null; };
+function go(){
+  clearRuntime(); closeX();
+  const ph = S.phases[S.phase_idx];
+  logEvent("phase_start", {phase:ph.type});
+  persist();
+  (RENDER[ph.type] || RENDER.end)(ph);
+}
+function next(){
+  const ph = S.phases[S.phase_idx];
+  logEvent("phase_end", {phase:ph.type});
+  S.phase_idx = Math.min(S.phase_idx + 1, S.phases.length - 1);
+  go();
+}
+function skipPhase(){
+  const ph = S.phases[S.phase_idx];
+  if(ph.type === "end") return;
+  if(RT.onSkip) RT.onSkip();
+  const c = curCond(); if(c){ c.skipped = c.skipped || []; c.skipped.push(ph.type); }
+  logEvent("phase_skipped", {phase:ph.type});
+  next();
+}
+function abortSession(){
+  if(RT.onSkip) RT.onSkip();
+  logEvent("aborted", {at:S.phases[S.phase_idx].type});
+  S.status = "aborted";
+  S.phase_idx = S.phases.length - 1;
+  go();
+}
+function newCond(pos, code){ return {pos, code, label:COND[code].label, skipped:[], restarts:0}; }
+
+/* ---------- 各画面 ---------- */
+const RENDER = {};
+
+RENDER.welcome = () => {
+  stage(card(`<h2>実験をはじめます</h2>
+    <p>この画面の指示に従って進めてください。分からないことがあれば、いつでも実験者に聞いてください。</p>
+    <ol>
+      <li>${S.pre_short ? "今日の状態について答える（約1分）" : "アンケートに答える（約5分）"}</li>
+      ${S.settings.practice !== false ? `<li>100マス計算（かけ算）の練習（${Math.round(S.settings.practice_s/6)/10}分）</li>` : `<li>100マス計算（かけ算）のやり方の確認</li>`}
+      <li>本番：7つの条件を続けて行います（1つの条件は約6分）</li>
+      <li>最後のアンケート（約5分）</li>
+    </ol>
+    <p>マウスで選んだり、キーボードで数字を入力したりして進めます。</p>
+    <div class="actions"><button class="btn primary" id="go">はじめる</button></div>`));
+  $("#go").onclick = next;
+};
+
+function itemHTML(it, ans){
+  const v = ans[it.id];
+  const req = it.req ? `<span class="req">必須</span>` : "";
+  let body = "";
+  if(it.type === "text") body = `<input type="text" data-id="${it.id}" value="${esc(v || "")}" autocomplete="off">`;
+  else if(it.type === "textarea") body = `<textarea data-id="${it.id}">${esc(v || "")}</textarea>`;
+  else if(it.type === "number") body = `<div class="inline"><input type="number" data-id="${it.id}" value="${esc(v ?? "")}" min="${it.min ?? ""}" max="${it.max ?? ""}" step="${it.step ?? "any"}" inputmode="decimal"><span>${esc(it.suffix || "")}</span></div>`;
+  else if(it.type === "time") body = `<input type="time" data-id="${it.id}" value="${esc(v || "")}" style="max-width:160px">`;
+  else if(it.type === "choice") body = `<div class="opts">${it.opts.map((o) => `<label class="pill"><input type="radio" name="${it.id}" value="${esc(o)}" ${v === o ? "checked" : ""}><span>${esc(o)}</span></label>`).join("")}</div>`;
+  else if(it.type === "multi"){ const sel = String(v || "").split("|"); body = `<div class="opts">${it.opts.map((o) => `<label class="pill"><input type="checkbox" name="${it.id}" value="${esc(o)}" ${sel.includes(o) ? "checked" : ""}><span>${esc(o)}</span></label>`).join("")}</div>`; }
+  else if(it.type === "scale7") body = scaleHTML(it.id, v, it.lo, it.hi);
+  let follow = "";
+  if(it.follow){
+    const show = followShown(it, v);
+    follow = `<div class="follow" data-follow="${it.id}" ${show ? "" : "hidden"}>${it.follow.map((f) => `<label class="inline"><span>${esc(f.q)}</span>${f.type === "number" ? `<input type="number" data-id="${f.id}" value="${esc(ans[f.id] ?? "")}" min="${f.min ?? ""}" max="${f.max ?? ""}" step="${f.step ?? "any"}"><span>${esc(f.suffix || "")}</span>` : f.type === "time" ? `<input type="time" data-id="${f.id}" value="${esc(ans[f.id] || "")}">` : `<input type="text" data-id="${f.id}" value="${esc(ans[f.id] || "")}" autocomplete="off">`}</label>`).join("")}</div>`;
+  }
+  return `<div class="q" data-q="${it.id}"><div class="qt">${esc(it.q)}${req}</div>${body}${follow}</div>`;
+}
+function scaleHTML(name, v, lo, hi, none){
+  return `<div class="scale" role="radiogroup">${[1,2,3,4,5,6,7].map((n) => `<label class="pill"><input type="radio" name="${name}" value="${n}" ${String(v) === String(n) ? "checked" : ""}><span>${n}</span></label>`).join("")}</div>
+    <div class="anchors"><span>1＝${esc(lo)}</span><span>7＝${esc(hi)}</span></div>
+    ${none ? `<div class="extra"><label class="pill"><input type="radio" name="${name}" value="none" ${v === "none" ? "checked" : ""}><span>${esc(none)}</span></label></div>` : ""}`;
+}
+function followShown(it, v){
+  if(v == null || v === "") return false;
+  if(it.followOn === "*") return true;
+  if(it.type === "multi") return String(v).split("|").includes(it.followOn);
+  return v === it.followOn;
+}
+function readForm(root, spec){
+  const ans = {};
+  spec.filter((x) => x.id).forEach((it) => {
+    [it, ...(it.follow || [])].forEach((q) => {
+      if(q.type === "multi"){ const els = $$(`input[name="${q.id}"]:checked`, root); if(els.length) ans[q.id] = els.map((x) => x.value).join("|"); }
+      else if(q.type === "choice" || q.type === "scale7"){ const el = $(`input[name="${q.id}"]:checked`, root); if(el) ans[q.id] = q.type === "scale7" ? parseInt(el.value, 10) : el.value; }
+      else { const el = $(`[data-id="${q.id}"]`, root); if(el && el.value.trim() !== "") ans[q.id] = q.type === "number" ? parseFloat(el.value) : el.value.trim(); }
+    });
+    if(it.follow && !followShown(it, ans[it.id])) it.follow.forEach((f) => delete ans[f.id]);
+  });
+  return ans;
+}
+function questionnaire(key, spec, title, lead, prog, topHTML, onBind){
+  const rec = S[key] = S[key] || {answers:{}};
+  rec.shown = rec.shown || stamp();
+  const ans = rec.answers;
+  let html = "";
+  spec.forEach((it) => { html += it.sec ? `<div class="qsec">${esc(it.sec)}</div>` : itemHTML(it, ans); });
+  app.innerHTML = `<div class="stage"><div class="form">${card(`<h2>${esc(title)}</h2><p>${esc(lead)}</p>${topHTML || ""}${html}
+    <div class="actions"><span class="formerr" id="ferr"></span><button class="btn primary" id="done">回答して次へ</button></div>`, prog)}</div></div>${xButton()}`;
+  bindXButton(); window.scrollTo(0, 0);
+  const root = $(".form");
+  if(onBind) onBind(root);
+  root.addEventListener("change", () => {
+    const now = readForm(root, spec);
+    spec.filter((x) => x.follow).forEach((it) => { const box = $(`[data-follow="${it.id}"]`, root); if(box) box.hidden = !followShown(it, now[it.id]); });
+    $$(".q.missing", root).forEach((q) => { const id = q.dataset.q; if(now[id] != null) q.classList.remove("missing"); });
+    rec.answers = now; persistSoon();
+  });
+  $("#done").onclick = () => {
+    const now = readForm(root, spec);
+    const miss = spec.filter((x) => x.id && x.req && now[x.id] == null);
+    const bad = spec.filter((x) => x.type === "number" && now[x.id] != null && ((x.min != null && now[x.id] < x.min) || (x.max != null && now[x.id] > x.max)));
+    $$(".q .qt[data-range]", root).forEach((t) => t.removeAttribute("data-range"));
+    bad.forEach((x) => { const t = $(`[data-q="${x.id}"] .qt`, root); if(t) t.dataset.range = `　← ${x.min}〜${x.max} の数で答えてください`; });
+    miss.push(...bad);
+    $$(".q", root).forEach((q) => q.classList.toggle("missing", miss.some((m) => m.id === q.dataset.q)));
+    if(miss.length){ $("#ferr").textContent = bad.length && miss.length === bad.length ? "数字を確かめてください" : `未回答が ${miss.length - bad.length} 問あります`; $(`[data-q="${miss[0].id}"]`, root).scrollIntoView({behavior:"smooth", block:"center"}); return; }
+    rec.answers = now; rec.done = stamp(); rec.rt_ms = Math.round(rec.done.perf_ms - rec.shown.perf_ms);
+    if(RT.onSkip) RT.onSkip();
+    next();
+  };
+}
+RENDER.pre = () => {
+  const spec = S.pre_short ? PRE.filter((x) => !x.full) : PRE;
+  questionnaire("pre", spec, S.pre_short ? "今日の状態" : "事前アンケート", "当てはまるものを選んだり、書き込んだりしてください。", null);
+};
+/* 事後アンケート：各条件の曲をもう一度聴けるボタン（思い出すため）。押すと最初から流れ、もう一度押すと止まる */
+RENDER.post = () => {
+  const top = `<div class="replay"><div class="replay-head">曲をもう一度聴く <span class="qnote">（ヘッドホンで聴いてください。もう一度押すと止まります）</span></div>
+    <div class="replay-list">${S.order.map((code, i) => code === "G"
+      ? `<div class="rp silent"><b>${i+1}番目</b><span>曲なし</span></div>`
+      : `<button type="button" class="rp" data-rp="${i+1}"><b>${i+1}番目</b><span class="ic">▶ 聴く</span></button>`).join("")}</div></div>`;
+  let playing = null;   // {pos, code, btn}
+  const stopNow = (why) => {
+    if(!playing) return;
+    const p = playing; playing = null;
+    p.btn.classList.remove("on"); $(".ic", p.btn).textContent = "▶ 聴く";
+    const a = AUD[p.code]; if(a) stopPlay(a, 120);
+    logEvent("replay_stop", {pos:p.pos, code:p.code, by:why, s:Math.round((performance.now() - p.t0) / 100) / 10});
+  };
+  questionnaire("post", POST, "事後アンケート", "7つの条件がすべて終わりました。思い出しにくいときは、上のボタンで各条件の曲をもう一度聴けます。当てはまるものを選んでください。", null, top, (root) => {
+    $$("[data-rp]", root).forEach((btn) => btn.addEventListener("click", () => {
+      const pos = +btn.dataset.rp, code = S.order[pos - 1], a = AUD[code];
+      const same = playing && playing.pos === pos;
+      stopNow("button");
+      if(same || !a) return;
+      playing = {pos, code, btn, t0:performance.now()};
+      btn.classList.add("on"); $(".ic", btn).textContent = "■ 止める";
+      logEvent("replay_start", {pos, code});
+      playFrom(a, S.audio_meta[code] ? S.audio_meta[code].offset_s || 0 : 0, S.settings.volume / 100, null, () => { if(playing && playing.pos === pos) stopNow("ended"); })
+        .catch(() => stopNow("error"));
+      btn.blur();
+    }));
+    RT.onSkip = () => stopNow("leave");
+  });
+};
+
+RENDER.howto = () => {
+  stage(card(`<h2>100マス計算のやり方</h2>
+    <ul>
+      <li>計算は<b>2けた×1けたのかけ算</b>です。黄色い枠のマスに、<b>左の数（2けた）と上の数（1けた）をかけた答え</b>を、キーボードの数字キーで入力します（上の段の数字キーでも、右のテンキーでもかまいません）。</li>
+      <li><span class="key">Enter</span> で確定すると、右のマスに進みます。行の終わりまで行くと、次の行の左はしに進みます。</li>
+      <li>確定する前なら <span class="key">Backspace</span> で消して直せます。確定した答えは直せません。</li>
+      <li>表のマスをすべて解き終わったら、すぐに次の表が出ます。そのまま続けて解いてください。</li>
+      <li>決められた時間になると、自動で終わります。できるだけ速く、正確に解いてください。計算の成績で、あなたの能力を評価することはありません。</li>
+    </ul>
+    ${S.settings.practice !== false ? `<p>まず、音楽なしで練習をします。</p>
+    <div class="actions"><button class="btn primary" id="go">練習をはじめる</button></div>` : `<p>分からないことがあれば、実験者に聞いてください。このあと本番に進みます。本番では、計算のときに曲が流れることも、流れないこともあります。</p>
+    <div class="actions"><button class="btn primary" id="go">本番へ進む</button></div>`}`));
+  $("#go").onclick = next;
+};
+
+/* 合図（スペースキー または ボタン）→ 3・2・1 → 開始 */
+function readyThenCount(html, onStart){
+  stage(card(`${html}<div class="actions"><button class="btn primary" id="go">はじめる</button></div>`));
+  let started = false;
+  const begin = () => {
+    if(started) return; started = true; clearRuntime(); blurActive();
+    let n = 3;
+    const show = () => {
+      if(n === 0){ onStart(); return; }
+      app.innerHTML = `<div class="stage"><div class="count">${n}</div></div>${xButton()}`; bindXButton();
+      n--; later(show, 1000);
+    };
+    show();
+    onKeys((e) => { if([" ","Enter"].includes(e.key)) e.preventDefault(); }, (e) => { if(e.key === " ") e.preventDefault(); });
+  };
+  $("#go").onclick = begin;
+  onKeys((e) => { if(e.key === " " || e.code === "Space"){ e.preventDefault(); begin(); } }, (e) => { if(e.key === " ") e.preventDefault(); });
+}
+
+/* 100マス：決めた時間のあいだ、かけ算を解き続ける。100マスを解き終えたら、すぐ次の表に進む */
+function runTask(rec, sheets, totalSec, onDone, T0){
+  rec.blocks = []; rec.start = stamp();
+  if(T0 == null) T0 = performance.now();
+  const endAt = T0 + totalSec * 1000, op = OPS.mul;
+  let si = 0, n = 0, over = false, cur = null;
+  const onVis = () => { if(document.hidden && cur){ cur.blk.blur++; logEvent("hidden_during_task", {sheet:cur.blk.sheet_id}); } };
+  const onBlur = () => { if(cur){ cur.blk.blur++; logEvent("blur_during_task", {sheet:cur.blk.sheet_id}); } };
+  document.addEventListener("visibilitychange", onVis); window.addEventListener("blur", onBlur);
+  const closeSheet = (why) => {
+    if(!cur) return;
+    const b = cur.blk; b.end = stamp(); b.pending = cur.typed(); b.ended_by = why;
+    logEvent("sheet_end", {sheet:b.sheet_id, no:b.sheet_no, attempted:b.entries.length, correct:b.entries.filter((x) => x.ok).length, by:why});
+    cur = null;
+  };
+  const finishAll = (why) => {
+    if(over) return; over = true;
+    closeSheet(why);
+    document.removeEventListener("visibilitychange", onVis); window.removeEventListener("blur", onBlur);
+    rec.end = stamp();
+    if(why === "skipped") return;
+    clearRuntime(); persist(); onDone();
+  };
+  RT.onSkip = () => finishAll("skipped");
+  const startSheet = () => {
+    const sh = sheets[si % sheets.length], no = si + 1;
+    const NC = sh.cols.length, NK = sh.rows.length * NC;
+    const blk = {op:"mul", sheet_id:sh.id, sheet_no:no, rows:sh.rows, cols:sh.cols, start:stamp(), entries:[], pending:"", completed_all:false, ime_warn:0, blur:0};
+    rec.blocks.push(blk);
+    logEvent("sheet_start", {sheet:sh.id, no});
+    let grid = `<table class="masu" aria-label="計算の表"><tr><th>${op.sym}</th>${sh.cols.map((c) => `<th>${c}</th>`).join("")}</tr>`;
+    sh.rows.forEach((r, i) => { grid += `<tr><th>${r}</th>${sh.cols.map((c, j) => `<td data-k="${i*NC+j}"></td>`).join("")}</tr>`; });
+    grid += `</table>`;
+    app.innerHTML = `<div class="stage" style="padding-block:12px">
+      <div class="taskbar ${no > 1 ? "cue" : ""}"><div><span class="opname">${op.name}</span><span class="ophow">${op.how}</span></div>
+        <div class="sheetinfo">${no > 1 ? `<span class="sheetnote">新しい表です。続けて解いてください</span>` : ""}<span class="sheetno">${no}枚目</span></div></div>
+      ${grid}<div class="taskhint">数字キーで入力 → <span class="key">Enter</span> で確定。表を解き終えたら次の表に進みます</div>
+    </div>${xButton()}`;
+    bindXButton(); blurActive();
+    const cells = $$(".masu td");
+    let k = 0, typed = "", shownAt = performance.now(), first = null, bs = 0, src = new Set();
+    cur = {blk, typed:() => typed};
+    const paint = () => { const td = cells[k]; if(td){ td.classList.add("cur"); td.textContent = typed; } };
+    paint();
+    const onDown = (e) => {
+      if(over) return;
+      if(e.target && e.target.closest && e.target.closest("#xpanel")) return;
+      if(e.isComposing || e.key === "Process"){ blk.ime_warn++; e.preventDefault(); banner("入力モードを「半角英数」にしてください（実験者に知らせてください）", 3000); return; }
+      let d = null, s = "";
+      if(/^Digit[0-9]$/.test(e.code)){ d = e.code.slice(5); s = "row"; }
+      else if(/^Numpad[0-9]$/.test(e.code)){ d = e.code.slice(6); s = "pad"; }
+      else if(/^[0-9]$/.test(e.key)){ d = e.key; s = "key"; }
+      if(d !== null){
+        e.preventDefault();
+        if(typed.length >= 3) return;
+        typed += d; if(first === null) first = performance.now() - shownAt; src.add(s); paint(); return;
+      }
+      if(e.key === "Backspace" || e.key === "Delete"){ e.preventDefault(); if(typed){ typed = typed.slice(0, -1); bs++; paint(); } return; }
+      if(e.key === "Enter" || e.code === "NumpadEnter"){
+        e.preventDefault();
+        if(!typed) return;
+        const now = performance.now(), wall = Date.now(), i = Math.floor(k / NC), j = k % NC, a = sh.rows[i], b = sh.cols[j], ans = op.f(a, b), resp = parseInt(typed, 10);
+        n++;
+        blk.entries.push({n, k:k+1, row:i+1, col:j+1, a, b, ans, resp, raw:typed, ok: resp === ans ? 1 : 0, rt_ms:Math.round(now - shownAt), first_ms:Math.round(first), bs, src:[...src].join("+"),
+          t_ms:Math.round(now - T0), iso:isoLocal(wall), epoch_ms:wall});
+        const td = cells[k]; td.classList.remove("cur"); td.classList.add("done"); td.textContent = typed;
+        k++; typed = ""; first = null; bs = 0; src = new Set(); shownAt = now;
+        if(k >= NK){ blk.completed_all = true; logEvent("sheet_completed", {sheet:sh.id, ms:Math.round(now - T0)}); closeSheet("completed"); si++; startSheet(); return; }
+        paint(); persistSoon();
+        return;
+      }
+      if(e.key === " " || e.key === "Tab") e.preventDefault();
+    };
+    const onUp = (e) => { if(e.key === " " || e.key === "Enter") e.preventDefault(); };
+    if(RT.keydown){ document.removeEventListener("keydown", RT.keydown, true); RT.keydown = null; }
+    if(RT.keyup){ document.removeEventListener("keyup", RT.keyup, true); RT.keyup = null; }
+    onKeys(onDown, onUp);
+  };
+  startSheet();
+  const tick = () => { const left = endAt - performance.now(); if(left <= 0) finishAll("time"); else later(tick, Math.min(40, left)); };
+  later(tick, Math.min(40, Math.max(0, endAt - performance.now())));
+}
+
+RENDER.practice = () => {
+  readyThenCount(`<h2>練習</h2><p>かけ算を${Math.round(S.settings.practice_s/6)/10}分間練習します（音楽はありません）。</p><p>準備ができたら、<span class="key">スペース</span>キーを押すか「はじめる」を押してください。3秒後に始まります。</p>`, () => {
+    S.practice = {};
+    runTask(S.practice, sheetsOf(S, "P"), S.settings.practice_s, () => {
+      stage(card(`<h2>練習は終わりです</h2><p>分からなかったことがあれば、実験者に聞いてください。</p><p>次から本番です。本番では、計算のときに曲が流れることも、流れないこともあります。</p><div class="actions"><button class="btn primary" id="go">本番へ進む</button></div>`));
+      $("#go").onclick = next;
+    });
+  });
+};
+
+RENDER.ready = (ph) => {
+  if(!S.conds[ph.pos] || S.conds[ph.pos].task) S.conds[ph.pos] = newCond(ph.pos, S.order[ph.pos-1]);
+  stage(card(`<h2>${ph.pos === 1 ? "本番をはじめます" : "次の条件に進みます"}</h2>
+    <p>これから、${Math.round(S.settings.rest_s/6)/10}分間の安静 → 気分の評定 → 計算（はじめの${S.settings.lead_s ?? 30}秒は待つだけ、そのあと${Math.round(S.settings.task_s/6)/10}分）→ 評定 の順に進みます。</p>
+    <p>準備ができたら「はじめる」を押してください。</p>
+    <div class="actions"><button class="btn primary" id="go">はじめる</button></div>`, `7つのうち ${ph.pos} つ目`));
+  $("#go").onclick = next;
+};
+
+RENDER.rest = (ph) => {
+  const c = S.conds[ph.pos];
+  c.rest = {start:stamp()};
+  app.innerHTML = `<div class="stage"><div class="fix">＋</div><div class="restnote">楽な姿勢で、画面の「＋」を見ていてください。<br>目は閉じず、話さないでください。</div></div>${xButton()}`;
+  bindXButton(); blurActive();
+  RT.onSkip = () => { c.rest.end = stamp(); c.rest.skipped = true; };
+  later(() => { c.rest.end = stamp(); next(); }, S.settings.rest_s * 1000);
+};
+
+function affectGridHTML(compact){
+  /* Affect Grid（Russell, Weiss & Mendelsohn, 1989）：横＝快・不快、縦＝覚醒度の2軸だけを示す */
+  let h = `<div class="ag ${compact ? "compact" : ""}" role="grid" aria-label="Affect Grid（横：快・不快、縦：覚醒度）">`;
+  const lab = (t, cls, col, row) => `<div class="lab ${cls}" style="grid-column:${col};grid-row:${row}"><span>${t}</span></div>`;
+  h += lab(`<span class="ax">▲</span>目がさえている（覚醒が高い）`, "c top", "2 / span 9", 1);
+  h += lab(`<span class="ax">▼</span>眠い・ぼんやりしている（覚醒が低い）`, "c bottom", "2 / span 9", 11);
+  h += lab(`<span class="ax">◀</span>不快`, "r side", 1, "2 / span 9") + lab(`快<span class="ax">▶</span>`, "side", 11, "2 / span 9");
+  for(let r=0; r<9; r++) for(let c=0; c<9; c++){
+    h += `<button type="button" style="grid-column:${c+2};grid-row:${r+2}" data-x="${c+1}" data-y="${9-r}" class="${r===4 && c===4 ? "mid" : ""}" aria-label="快 ${c+1}・覚醒 ${9-r}"></button>`;
+  }
+  return h + `</div>`;
+}
+function bindAffectGrid(root, rec, onChange){
+  rec.shown = stamp(); rec.changes = 0;
+  $$(".ag button", root).forEach((b) => b.addEventListener("click", () => {
+    $$(".ag button.sel", root).forEach((x) => { x.classList.remove("sel"); x.textContent = ""; });
+    b.classList.add("sel"); b.textContent = "●";
+    const t = performance.now();
+    if(rec.pleasure == null) rec.first_ms = Math.round(t - rec.shown.perf_ms); else rec.changes++;
+    rec.pleasure = +b.dataset.x; rec.arousal = +b.dataset.y;
+    onChange && onChange();
+  }));
+}
+RENDER.ag_pre = (ph) => {
+  const c = S.conds[ph.pos];
+  c.ag_pre = {};
+  stage(card(`<h2>今の気分</h2>
+    <p>今の状態にいちばん近いマスを、1つクリックしてください。</p>
+    <ul class="agguide"><li><b>横</b>は気分の快・不快：右ほど快い、左ほど不快</li><li><b>縦</b>は覚醒度（目のさえ具合）：上ほど目がさえて活発、下ほど眠くぼんやり</li><li>縦と横は別々に考えます。真ん中のマスが「どちらでもない」です</li></ul>
+    <div class="agbox">${affectGridHTML(false)}<p class="agcap">例：快くて眠い → 右下、不快で目がさえている → 左上</p></div>
+    <div class="actions"><button class="btn primary" id="go" disabled>次へ</button></div>`, `7つのうち ${ph.pos} つ目`));
+  bindAffectGrid(app, c.ag_pre, () => { $("#go").disabled = false; });
+  RT.onSkip = () => { c.ag_pre.skipped = true; };
+  $("#go").onclick = () => { const r = c.ag_pre; r.done = stamp(); r.rt_ms = Math.round(r.done.perf_ms - r.shown.perf_ms); next(); };
+};
+
+RENDER.task = (ph) => {
+  /* 開始（スペース）→ 曲が流れ始める → lead_s 秒は聴いて待つだけ → 100マス計算が始まる（task_s 秒、曲は流れたまま）→ 計算の終わりで曲も止まる */
+  const c = S.conds[ph.pos], code = c.code, lead = S.settings.lead_s, taskS = S.settings.task_s;
+  stage(card(`<h2>計算</h2><p>ヘッドホンを着けてください。曲が流れることも、流れないこともあります。</p>
+    <p>準備ができたら、<span class="key">スペース</span>キーを押すか「はじめる」を押してください。${lead}秒たつと、計算が始まります。</p>
+    <div class="actions"><button class="btn primary" id="go">はじめる</button></div>`));
+  let started = false;
+  const begin = () => {
+    if(started) return; started = true; clearRuntime(); blurActive();
+    c.task = {lead:{start:stamp(), planned_s:lead}};
+    const t0 = performance.now();
+    startAudio(code, c.task);                         // スペースと同時に曲を流し始める
+    app.innerHTML = `<div class="stage"><div class="fix" id="fix">＋</div><div class="restnote" id="leadnote">このまま、楽にして待っていてください。<br>まもなく計算が始まります。</div></div>${xButton()}`;
+    bindXButton();
+    onKeys((e) => { if([" ", "Enter"].includes(e.key)) e.preventDefault(); }, (e) => { if(e.key === " ") e.preventDefault(); });
+    [3, 2, 1].forEach((n) => { if(lead - n >= 0) later(() => { const f = $("#fix"); if(f){ f.className = "count"; f.textContent = n; } }, (lead - n) * 1000); });
+    RT.onSkip = () => { c.task.lead.end = c.task.lead.end || stamp(); stopAudio(code, c.task, 150); };
+    if(taskS > 2) later(() => fadeAudio(code, 2000), Math.max(0, (lead + taskS - 2) * 1000));   // 最後の2秒でフェードアウト
+    later(() => {
+      c.task.lead.end = stamp();
+      logEvent("task_begin_after_lead", {lead_s:lead});
+      runTask(c.task, sheetsOf(S, String(ph.pos)), taskS, () => {
+        stopAudio(code, c.task, 150);
+        stage(card(`<div class="big">やめ</div><p>ヘッドホンを外して、「次へ」を押してください。</p><div class="actions"><button class="btn primary" id="go" disabled>次へ</button></div>`));
+        later(() => { const b = $("#go"); if(b) b.disabled = false; }, 1500);
+        $("#go").onclick = next;
+      }, t0 + lead * 1000);
+      const prevSkip = RT.onSkip;
+      RT.onSkip = () => { if(prevSkip) prevSkip(); stopAudio(code, c.task, 150); };
+    }, lead * 1000);
+  };
+  $("#go").onclick = begin;
+  onKeys((e) => { if(e.key === " " || e.code === "Space"){ e.preventDefault(); begin(); } }, (e) => { if(e.key === " ") e.preventDefault(); });
+};
+
+RENDER.ratings = (ph) => {
+  const c = S.conds[ph.pos], silent = c.code === "G", lyr = hasLyrics(c.code);
+  const items = RATE.filter((x) => !(silent && x.song) && !(x.lyricsOnly && !lyr));
+  c.ag_post = {}; c.ratings = {items:{}, shown:stamp()};
+  const songItems = items.filter((x) => x.song), workItems = items.filter((x) => !x.song);
+  const block = (list, no) => list.map((it, i) => `<div class="q" data-q="${it.id}"><div class="qt">${no}-${i+1}　${esc(it.q)}</div>${scaleHTML("r_" + it.id, null, it.lo, it.hi, it.none)}</div>`).join("");
+  const itemsHTML = silent ? `<div class="qsec">2. 計算作業について</div>${block(workItems, 2)}`
+    : `<div class="qsec">2. 聴いた曲について <span class="qnote">（曲そのものについて答えてください）</span></div>${block(songItems, 2)}<div class="qsec">3. 計算作業について <span class="qnote">（曲のことではなく、作業について）</span></div>${block(workItems, 3)}`;
+  app.innerHTML = `<div class="stage"><div class="form" style="max-width:1180px">${card(`<h2>計算の後の評定</h2>
+    <div class="ratings two">
+      <div><div class="qsec">1. 今の気分</div><p style="font-size:16px">横は快・不快、縦は覚醒度。いちばん近いマスを1つクリック（真ん中が「どちらでもない」）。</p><div class="agbox">${affectGridHTML(true)}</div></div>
+      <div>${itemsHTML}</div>
+    </div>
+    <div class="actions"><span class="formerr" id="ferr"></span><button class="btn primary" id="go">回答して次へ</button></div>`, `7つのうち ${ph.pos} つ目`)}</div></div>${xButton()}`;
+  bindXButton(); window.scrollTo(0, 0);
+  const root = $(".form");
+  bindAffectGrid(root, c.ag_post, () => { const f = $("#ferr"); if(f && f.dataset.ag) { f.textContent = ""; delete f.dataset.ag; } });
+  root.addEventListener("change", (e) => { const q = e.target.closest(".q"); if(q) q.classList.remove("missing"); });
+  RT.onSkip = () => { c.ratings.skipped = true; };
+  $("#go").onclick = () => {
+    const vals = {}; const miss = [];
+    items.forEach((it) => { const el = $(`input[name="r_${it.id}"]:checked`, root); if(el) vals[it.id] = el.value === "none" ? "none" : parseInt(el.value, 10); else miss.push(it.id); });
+    $$(".q", root).forEach((q) => q.classList.toggle("missing", miss.includes(q.dataset.q)));
+    const agMissing = c.ag_post.pleasure == null;
+    if(agMissing || miss.length){
+      $("#ferr").textContent = agMissing ? "1. の気分のマスを選んでください" : `未回答が ${miss.length} 問あります`;
+      if(agMissing) $("#ferr").dataset.ag = "1";
+      if(!agMissing) $(`[data-q="${miss[0]}"]`, root).scrollIntoView({behavior:"smooth", block:"center"});
+      return;
+    }
+    c.ag_post.done = stamp(); c.ag_post.rt_ms = Math.round(c.ag_post.done.perf_ms - c.ag_post.shown.perf_ms);
+    c.ratings.items = vals; c.ratings.done = stamp(); c.ratings.rt_ms = Math.round(c.ratings.done.perf_ms - c.ratings.shown.perf_ms);
+    next();
+  };
+};
+
+RENDER.break = () => {
+  S.break = {asked:stamp()};
+  stage(card(`<h2>4つ目まで終わりました</h2><p>ここで休憩をとることができます。休憩しますか？</p>
+    <div class="actions"><button class="btn" id="no">休憩しない</button><button class="btn primary" id="yes">休憩する</button></div>`, "7つのうち 4つ終了"));
+  $("#no").onclick = () => { S.break.answer = "no"; S.break.dur_s = 0; next(); };
+  $("#yes").onclick = () => {
+    S.break.answer = "yes"; S.break.start = stamp();
+    const t0 = performance.now();
+    stage(card(`<h2>休憩中</h2><p>楽にしていてください。目安は${Math.round(S.settings.break_s/60*10)/10}分です。再開するときは「再開する」を押してください。</p>
+      <p class="num" style="font-size:40px;margin:16px 0" id="el">0:00</p>
+      <div class="actions"><button class="btn primary" id="go">再開する</button></div>`));
+    const tick = () => { const el = $("#el"); if(el) el.textContent = mmss((performance.now() - t0) / 1000); later(tick, 500); };
+    tick();
+    const end = () => { S.break.end = stamp(); S.break.dur_s = Math.round((performance.now() - t0) / 100) / 10; };
+    RT.onSkip = end;
+    $("#go").onclick = () => { end(); next(); };
+  };
+  RT.onSkip = () => { if(!S.break.answer) S.break.answer = "skipped"; };
+};
+
+RENDER.end = () => {
+  if(S.status === "running"){ S.status = "done"; }
+  S.finished_at = S.finished_at || isoLocal(Date.now());
+  persist();
+  try{ if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); }catch(e){}
+  const t = tables(S);
+  const rows = t.summary.filter((r) => r.phase === "main").map((r) => `<tr><td>${r.position}</td><td><span class="chip">${r.condition}</span> ${esc(r.condition_label)}</td><td class="num">${r.correct ?? "—"}</td><td class="num">${r.attempted ?? "—"}</td><td class="num">${r.accuracy != null ? (r.accuracy * 100).toFixed(1) + "%" : "—"}</td><td class="num">${r.sheets_completed ?? "—"}</td><td class="num">${r.ag_pre_pleasure ?? "—"},${r.ag_pre_arousal ?? "—"} → ${r.ag_post_pleasure ?? "—"},${r.ag_post_arousal ?? "—"}</td></tr>`).join("");
+  app.innerHTML = `<div class="stage">${card(`<h2>${S.status === "aborted" ? "実験を中止しました" : "これで終わりです"}</h2><p>${S.status === "aborted" ? "実験者の指示に従ってください。" : "おつかれさまでした。実験者に声をかけてください。"}</p>
+    <details class="more" style="margin-top:24px;font-size:15px"><summary>実験者用：データの保存と結果の確認</summary>
+      <div class="row"><button class="btn primary" id="sv">データを保存（ZIP）</button><button class="btn" id="sj">JSONだけ保存</button><button class="btn" id="home">最初の画面へ</button></div>
+      <div class="msg" id="smsg"></div>
+      <p class="hint">ZIPには summary（条件ごと1行）・trials（1マスごと1行）・questionnaire・events・session の CSV と、全データの JSON が入ります。データはこの端末のブラウザにも残っています。</p>
+      <div class="tablebox"><table class="list"><tr><th>順番</th><th>条件</th><th>正答数</th><th>解答数</th><th>正答率</th><th>解き終えた表</th><th>気分（快,覚醒）前→後</th></tr>${rows}</table></div>
+    </details>`)}</div>`;
+  $("#sv").onclick = async () => { const r = await saveFile(fileBase(S) + ".zip", sessionZip(S)); const m = $("#smsg"); m.className = "msg " + (r.ok ? "ok" : "err"); m.textContent = r.ok ? "保存しました。" : r.msg; if(r.ok){ S.saved_at = isoLocal(Date.now()); persist(); } };
+  $("#sj").onclick = async () => { const r = await saveFile(fileBase(S) + "_raw.json", JSON.stringify(S, null, 1)); const m = $("#smsg"); m.className = "msg " + (r.ok ? "ok" : "err"); m.textContent = r.ok ? "保存しました。" : r.msg; };
+  $("#home").onclick = () => {
+    S = null;
+    if(AUD.A){ releaseTrack(AUD.A); delete AUD.A; delete OFFS.A; }   // 自選曲は参加者ごとに選び直す
+    renderSetup({text:"自選曲（A）の音源は外しました。次の参加者の曲を選んでください。"});
+  };
+};
+
+/* ---------- 準備画面（実験者） ---------- */
+let resumeId = null;
+function renderSetup(msg){
+  clearRuntime(); stopPreview();
+  const p = prefs();
+  if(p.v !== PREFS_V) ["rest_s","lead_s","task_s","practice_s","break_s","practice"].forEach((k) => delete p[k]);
+  setTheme(p.theme || DEFAULTS.theme);
+  Object.entries(p.offsets || {}).forEach(([c, v]) => { if(OFFS[c] == null) OFFS[c] = v; });
+  const list = readIndex();
+  const running = list.filter((x) => x.status === "running");
+  const resume = resumeId ? loadSession(resumeId) : null;
+  const lock = resume ? "disabled" : "";
+  const pid = resume ? resume.participant_id : (p.lastPid || "");
+  const week = resume ? resume.week : (p.lastWeek ?? 0);
+  const orderOpts = WILLIAMS.map((r, i) => `<option value="${i+1}">${i+1}：${r.join(" ")}</option>`).join("");
+  app.innerHTML = `<div class="wrap">
+    <div class="top"><h1>音楽と100マス計算</h1><span class="sub">予備実験用・実験者の準備画面　ver. ${APP_VERSION}</span></div>
+    ${!storageOk ? `<div class="note warn" style="margin-bottom:14px"><b>この端末に自動保存できません。</b>終了後に必ずZIPを保存してください。</div>` : ""}
+    ${resume ? `<div class="note warn" style="margin-bottom:18px"><b>続きから再開します：</b>${esc(resume.participant_id)}・${resume.week ? "第"+resume.week+"週" : "予備予備"}・順番号${resume.order_no}。音源を選び直してから「再開する」を押してください。途中だった条件は、その条件の最初（安静）からやり直します。 <button class="btn small" id="cancelResume">再開をやめる</button></div>` :
+      running.length ? `<div class="note warn" style="margin-bottom:18px"><b>途中で終わったセッションがあります。</b>${running.map((r) => `<div class="row" style="margin-top:6px"><span>${esc(r.pid)}・${r.week ? "第"+r.week+"週" : "予備予備"}・${r.done_conds}/7条件まで（${esc((r.updated||"").slice(0,16).replace("T"," "))}）</span><button class="btn small" data-resume="${esc(r.id)}">続きから再開</button><button class="btn small" data-zip="${esc(r.id)}">保存（ZIP）</button><button class="btn small" data-close="${esc(r.id)}">中止扱いにする</button></div>`).join("")}</div>` : ""}
+
+    <section class="panel"><h2><span class="step">1</span>セッション</h2>
+      <div class="fields">
+        <label class="field"><span>参加者ID</span><input type="text" id="pid" value="${esc(pid)}" placeholder="例：P01" autocomplete="off" ${lock}></label>
+        <label class="field"><span>週</span><select id="week" ${lock}>${[0,1,2,3,4].map((w) => `<option value="${w}" ${w === week ? "selected" : ""}>${w ? "第"+w+"週（予備実験）" : "予備予備実験"}</option>`).join("")}</select></label>
+        <label class="field"><span>提示順の番号（Williams法）</span><select id="order" ${lock}>${orderOpts}</select></label>
+        <label class="field"><span>自選曲の曲名（記録用・任意）</span><input type="text" id="selfsong" value="${esc(resume ? resume.self_song || "" : "")}" placeholder="例：曲名／アーティスト" autocomplete="off" ${lock}></label>
+        <label class="field"><span>自選曲の歌詞</span><select id="selflyrics" ${lock}><option value="">選んでください</option><option value="1">歌詞あり</option><option value="0">歌詞なし</option></select></label>
+      </div>
+      <div class="orderline" id="orderline"></div>
+      <div class="hint" id="ordersug" style="margin-top:6px"></div>
+      <label class="row" style="margin-top:10px;font-size:14px"><input type="checkbox" id="preshort" ${lock}> 2週目以降：事前アンケートは毎週の質問（今日の状態）だけにする（曲・音楽習慣などの背景の質問は初回だけ）</label>
+    </section>
+
+    <section class="panel"><h2><span class="step">2</span>音源</h2>
+      <p class="hint" style="margin:0 0 10px">${Object.keys(EMB).length ? `B〜F は、切り出して音の大きさをそろえた音源がこのページに入っています。自選曲（A）だけ選んでください。` : `条件ごとに音源ファイルを選びます。`}ファイル名の先頭を「A_」「B_」…にしておくと、まとめて選んだときに自動で振り分けます。ファイルはこの端末から外に送られません。</p>
+      <div class="row" style="margin-bottom:12px"><label class="btn" for="multi">ファイルをまとめて選ぶ</label><input type="file" id="multi" accept="audio/*,.mp3,.m4a,.wav,.aac,.flac,.ogg" multiple hidden><span class="hint" id="multimsg"></span></div>
+      <div class="audiolist" id="audiolist"></div>
+      <div class="fields" style="margin-top:14px">
+        <label class="field"><span>再生音量 <span class="num" id="volv">${p.volume ?? DEFAULTS.volume}%</span></span><input type="range" id="vol" min="10" max="100" step="5" value="${p.volume ?? DEFAULTS.volume}"></label>
+        <div class="field"><span>音量について</span><span class="hint" style="font-weight:400">パソコン本体の音量を固定し、その値を記録してください。ここは全条件に同じ割合でかかります。</span></div>
+      </div>
+      <label class="row" style="margin-top:12px;font-size:14px;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="match" style="margin-top:5px"><span>選んだファイル（自選曲など）の音の大きさを測って、目標の ${TARGET_LUFS} LUFS にそろえる（推奨。使う範囲＝開始位置から計算の長さで測ります）</span></label>
+    </section>
+
+    <section class="panel"><h2><span class="step">3</span>時間と画面</h2>
+      <div class="fields">
+        <label class="field"><span>安静（秒）</span><input type="number" id="rest_s" min="5" max="600" value="${p.rest_s ?? DEFAULTS.rest_s}"></label>
+        <label class="field"><span>曲が流れ始めてから計算が始まるまで（秒）</span><input type="number" id="lead_s" min="0" max="120" value="${p.lead_s ?? DEFAULTS.lead_s}"></label>
+        <label class="field"><span>計算の時間（秒・かけ算）</span><input type="number" id="task_s" min="10" max="600" value="${p.task_s ?? DEFAULTS.task_s}"></label>
+        <label class="field"><span>練習</span><select id="practice"><option value="1">あり</option><option value="0">なし</option></select></label>
+        <label class="field"><span>練習の時間（秒）</span><input type="number" id="practice_s" min="5" max="300" value="${p.practice_s ?? DEFAULTS.practice_s}"></label>
+        <label class="field"><span>画面の色</span><select id="theme"><option value="light">明るい（推奨）</option><option value="dark">暗い</option></select></label>
+      </div>
+      <label class="row" style="margin-top:12px;font-size:14px"><input type="checkbox" id="test"> テスト（動作確認用：安静5秒・待ち5秒・計算30秒・練習10秒。ファイル名に TEST_ が付きます）</label>
+    </section>
+
+    <section class="panel"><h2><span class="step">4</span>開始</h2>
+      <ul class="checks" id="checks"></ul>
+      <div class="row">
+        <button class="btn primary" id="startFs">全画面にして${resume ? "再開" : "開始"}</button>
+        <button class="btn" id="start">このまま${resume ? "再開" : "開始"}</button>
+      </div>
+      <div class="msg ${msg && msg.err ? "err" : "ok"}" id="startmsg">${esc(msg ? msg.text : "")}</div>
+      <p class="hint" style="margin:10px 0 0">開始すると参加者向けの画面になります。右下の小さな「実験者」ボタンから、時刻マーカーの記録・途中保存・段階のスキップ・中止ができます。心拍計と合わせるときは、パソコンの時計を心拍計の時刻に合わせておくか、開始直後にマーカーを記録してください。</p>
+    </section>
+
+    <section class="panel"><h2><span class="step">5</span>この端末に残っているデータ</h2>
+      ${list.length ? `<div class="tablebox"><table class="list"><tr><th>セッション</th><th>状態</th><th>条件</th><th>更新</th><th></th></tr>${list.map((r) => `<tr><td>${esc(r.id)}${r.test ? ' <span class="tag">TEST</span>' : ""}</td><td><span class="tag ${r.status === "done" ? "done" : r.status === "running" ? "run" : ""}">${({done:"終了", running:"途中", aborted:"中止"})[r.status] || esc(r.status)}</span></td><td class="num">${r.done_conds}/7</td><td class="num">${esc((r.updated||"").slice(5,16).replace("T"," "))}</td><td><div class="row" style="justify-content:flex-end;flex-wrap:nowrap"><button class="btn small" data-zip="${esc(r.id)}">保存（ZIP）</button><button class="btn small danger" data-del="${esc(r.id)}">削除</button></div></td></tr>`).join("")}</table></div>
+        <div class="row" style="margin-top:10px"><button class="btn small" id="zipall">終了したセッションをまとめて保存（ZIP）</button></div>` : `<p class="hint" style="margin:0">まだありません。</p>`}
+      <div class="msg" id="datamsg"></div>
+    </section>
+  </div>`;
+
+  // 値の初期化
+  const orderSel = $("#order");
+  if(resume) orderSel.value = String(resume.order_no);
+  else { const sug = suggestOrder(pid, week); orderSel.value = String(p.lastOrder && p.lastPid === pid && p.lastWeek === week ? p.lastOrder : (sug || 1)); }
+  $("#theme").value = p.theme || DEFAULTS.theme;
+  $("#practice").value = (resume ? resume.settings.practice !== false : (p.practice ?? DEFAULTS.practice)) ? "1" : "0";
+  $("#practice").onchange = updChecks;
+  if(resume && resume.self_lyrics != null) $("#selflyrics").value = resume.self_lyrics ? "1" : "0";
+  $("#selflyrics").onchange = updChecks;
+  $("#preshort").checked = resume ? !!resume.pre_short : week >= 2;
+  if(resume) CODES.forEach((c) => { if(resume.audio_meta[c] && resume.audio_meta[c].offset_s != null) OFFS[c] = resume.audio_meta[c].offset_s; });
+  if(resume) $("#practice").disabled = true;
+  if(resume){ ["rest_s","lead_s","task_s","practice_s"].forEach((k) => { if(resume.settings[k] != null) $("#" + k).value = resume.settings[k]; }); if(resume.settings.match_loudness != null) p.match = resume.settings.match_loudness; $("#test").checked = !!resume.test_mode; $("#vol").value = resume.settings.volume; $("#volv").textContent = resume.settings.volume + "%"; }
+
+  const updOrder = () => {
+    const n = parseInt(orderSel.value, 10), row = WILLIAMS[n-1];
+    $("#orderline").innerHTML = `<span class="hint">この順で提示：</span>` + row.map((c, i) => `${i ? '<span class="arrow">→</span>' : ""}<span class="chip" title="${esc(COND[c].label)}">${c}</span>`).join("") + `<span class="hint" style="margin-left:8px">（${row.map((c) => COND[c].label).join("／")}）</span>`;
+    const w = parseInt($("#week").value, 10), sug = suggestOrder($("#pid").value, w);
+    $("#ordersug").innerHTML = sug ? `おすすめの番号：<b>${sug}</b>（${w ? "参加者番号と週から計算" : "予備予備実験は自選曲が4番目に来る6番"}）${sug !== n && !resume ? ` <button class="btn small" id="usesug">${sug}番にする</button>` : ""}　用紙の並び：シード ${seedFor(w)}` : `参加者IDに数字を入れると、おすすめの番号を出します。用紙の並び：シード ${seedFor(w)}`;
+    const u = $("#usesug"); if(u) u.onclick = () => { orderSel.value = String(sug); updOrder(); updChecks(); };
+  };
+  orderSel.onchange = () => { updOrder(); updChecks(); };
+  const fillPerson = () => {
+    if(resume) return;
+    const who = (prefs().people || {})[$("#pid").value.normalize("NFKC").trim()];
+    if(!who) return;
+    if(!$("#selfsong").value && who.self_song) $("#selfsong").value = who.self_song;
+    if($("#selflyrics").value === "" && who.self_lyrics != null) $("#selflyrics").value = who.self_lyrics ? "1" : "0";
+    if(!AUD.A && who.offA != null) OFFS.A = who.offA;
+    refreshAudioRows();
+  };
+  $("#pid").oninput = () => { fillPerson(); updOrder(); updChecks(); };
+  $("#week").onchange = () => { const w = parseInt($("#week").value, 10); $("#preshort").checked = w >= 2; const sug = suggestOrder($("#pid").value, w); if(sug) orderSel.value = String(sug); updOrder(); updChecks(); };
+  $("#vol").oninput = () => { $("#volv").textContent = $("#vol").value + "%"; };
+  $("#theme").onchange = () => { setTheme($("#theme").value); const q = prefs(); q.theme = $("#theme").value; savePrefs(q); };
+  $("#test").onchange = remeasureAll;
+  $("#task_s").onchange = remeasureAll;
+  $("#lead_s").onchange = remeasureAll;
+  $("#match").checked = p.match ?? true;
+  $("#match").onchange = refreshAudioRows;
+  attachEmbedded(false);
+  $("#multi").onchange = (e) => { const got = autoAssign(Array.from(e.target.files || [])); $("#multimsg").textContent = got.length ? `振り分けました：${got.join("、")}` : "振り分けられるファイルがありませんでした。行ごとに選んでください。"; e.target.value = ""; };
+  updOrder();
+  fillPerson();
+  refreshAudioRows();
+
+  // 途中のセッション・残っているデータ
+  $$("[data-resume]").forEach((b) => b.onclick = () => { resumeId = b.dataset.resume; renderSetup(); });
+  $$("[data-close]").forEach((b) => b.onclick = () => { const s = loadSession(b.dataset.close); if(s){ s.status = "aborted"; s.events.push({...stamp(), type:"closed_from_setup", phase:"", pos:"", code:"", detail:""}); S = s; persist(); S = null; } renderSetup(); });
+  $$("[data-zip]").forEach((b) => b.onclick = async () => { const s = loadSession(b.dataset.zip); const m = $("#datamsg"); if(!s){ m.className = "msg err"; m.textContent = "データが読めませんでした。"; return; } const r = await saveFile(fileBase(s) + (s.status === "done" ? "" : "_partial") + ".zip", sessionZip(s)); m.className = "msg " + (r.ok ? "ok" : "err"); m.textContent = r.ok ? "保存しました。" : r.msg; });
+  $$("[data-del]").forEach((b) => b.onclick = () => {
+    if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "本当に削除"; setTimeout(() => { if(b.isConnected){ delete b.dataset.armed; b.textContent = "削除"; } }, 4000); return; }
+    LS.del(SKEY(b.dataset.del)); writeIndex(readIndex().filter((x) => x.id !== b.dataset.del)); renderSetup({text:"削除しました。"});
+  });
+  const za = $("#zipall"); if(za) za.onclick = async () => {
+    const files = []; readIndex().filter((x) => x.status === "done").forEach((x) => { const s = loadSession(x.id); if(!s) return; const t = tables(s), b = fileBase(s);
+      files.push({name:`${b}_summary.csv`, data:csv(t.summary, SUM_COLS)}, {name:`${b}_trials.csv`, data:csv(t.trials, TRIAL_COLS)}, {name:`${b}_questionnaire.csv`, data:csv(t.quest, Q_COLS)}, {name:`${b}_events.csv`, data:csv(t.events, EV_COLS)}, {name:`${b}_session.csv`, data:csv(t.session, SES_COLS)}, {name:`${b}_raw.json`, data:JSON.stringify(s)}); });
+    const m = $("#datamsg"); if(!files.length){ m.className = "msg err"; m.textContent = "終了したセッションがありません。"; return; }
+    const d = new Date(), r = await saveFile(`music100_all_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.zip`, makeZip(files)); m.className = "msg " + (r.ok ? "ok" : "err"); m.textContent = r.ok ? "保存しました。" : r.msg;
+  };
+  const cr = $("#cancelResume"); if(cr) cr.onclick = () => { resumeId = null; renderSetup(); };
+
+  $("#start").onclick = () => startSession(false);
+  $("#startFs").onclick = () => startSession(true);
+  updChecks();
+}
+
+function refreshAudioRows(){
+  const box = $("#audiolist"); if(!box) return;
+  const need = setupNeed();
+  let h = `<div class="arow head"><div>コード</div><div>条件</div><div>音源</div><div>開始位置</div><div></div></div>`;
+  CODES.forEach((c) => {
+    const a = AUD[c], emb = EMB[c];
+    if(c === "G"){ h += `<div class="arow"><div><span class="chip">G</span></div><div class="cond"><b>${COND.G.label}</b><small>${esc(COND.G.song)}</small></div><div class="file hint">ファイルは不要（何も流さない）</div><div></div><div></div></div>`; return; }
+    let st = `<span class="ng">未選択</span>`;
+    if(a){
+      const off = a.embedded ? 0 : (OFFS[c] || 0);
+      const short = a.duration != null && (a.duration - off) < need - 0.3;
+      let loud = "";
+      if(a.embedded) loud = `内蔵：元の曲の${a.source_start_s}秒から${mmss(a.duration)}・${a.lufs} LUFS`;
+      else if(a.measuring) loud = "音の大きさを測っています…";
+      else if(a.measure_error) loud = "音の大きさを測れませんでした（そのままの音量で流します）";
+      else if(a.lufs != null) loud = `${a.lufs} LUFS → ${matchOn() ? `${fmtDb(autoGain(a))} して ${TARGET_LUFS} LUFS にそろえる${a.capped ? "（音が割れないよう上げ幅を制限）" : ""}` : "そろえない（そのまま）"}`;
+      st = a.decoding ? `<span class="hint">読み込み中…</span> ${esc(a.name)}`
+        : a.error ? `<span class="ng">読み込めません：${esc(a.name)}</span><br><span class="hint" style="font-size:12px">MP3 に変換すると読めます（make_clips.py）</span>`
+        : `<span class="${short ? "ng" : "ok"}">${short ? "短い" : "✓"}</span> ${esc(a.name)} <span class="num hint">${mmss(a.duration)}</span>${short ? `<br><span class="ng" style="font-size:12px">開始位置から${need}秒に足りません</span>` : ""}<br><span class="hint" style="font-size:12px">${esc(loud)}</span>`;
+    }
+    const offCell = a && a.embedded ? `<span class="hint" style="font-size:12px">0秒（切り出し済み）</span>`
+      : `<label class="offset">開始<input type="number" id="off_${c}" value="${esc(String(OFFS[c] ?? 0))}" min="0" step="0.1" style="width:64px">秒</label>`;
+    h += `<div class="arow"><div><span class="chip">${c}</span></div><div class="cond"><b>${COND[c].label}</b><small>${esc(COND[c].song)}</small></div>
+      <div class="file">${st}</div>${offCell}
+      <div class="acts row" style="flex-wrap:nowrap"><label class="btn small" for="file_${c}">${emb ? "別のファイル" : "選ぶ"}</label><input type="file" id="file_${c}" accept="audio/*,.mp3,.m4a,.wav,.aac,.flac,.ogg,.webm,.opus" hidden>${emb && a && !a.embedded ? `<button class="btn small" data-emb="${c}">内蔵に戻す</button>` : ""}<button class="btn small" data-prev="${c}" ${a && !a.error && !a.decoding ? "" : "disabled"}>${previewing && previewing.code === c ? "停止" : "試聴"}</button></div></div>`;
+  });
+  box.innerHTML = h;
+  CODES.forEach((c) => {
+    const f = $(`#file_${c}`); if(f) f.onchange = (e) => { const file = e.target.files && e.target.files[0]; if(file) attachAudio(c, file); };
+    const o = $(`#off_${c}`); if(o) o.onchange = () => { OFFS[c] = Math.max(0, parseFloat(o.value) || 0); measureTrack(c); refreshAudioRows(); };
+  });
+  $$("[data-prev]").forEach((b) => b.onclick = () => preview(b.dataset.prev));
+  $$("[data-emb]").forEach((b) => b.onclick = () => { const c = b.dataset.emb; attachAudio(c, embeddedBlob(c), true); });
+  updChecks();
+}
+function remeasureAll(){ CODES.forEach((c) => { if(AUD[c] && !AUD[c].embedded) measureTrack(c); }); refreshAudioRows(); }
+
+function setupValues(){
+  const test = $("#test").checked;
+  const num = (id, d, min=0.001) => { const v = parseFloat($("#" + id).value); return isFinite(v) && v >= min ? v : d; };
+  return {
+    pid: $("#pid").value.normalize("NFKC").trim(), week: parseInt($("#week").value, 10), order_no: parseInt($("#order").value, 10),
+    self_song: $("#selfsong").value.trim(), self_lyrics: $("#selflyrics").value === "" ? null : $("#selflyrics").value === "1", pre_short: $("#preshort").checked, test,
+    settings: {
+      rest_s: test ? TEST.rest_s : num("rest_s", DEFAULTS.rest_s), lead_s: test ? TEST.lead_s : num("lead_s", DEFAULTS.lead_s, 0),
+      task_s: test ? TEST.task_s : num("task_s", DEFAULTS.task_s),
+      practice: $("#practice").value === "1", practice_s: test ? TEST.practice_s : num("practice_s", DEFAULTS.practice_s), break_s: 0,
+      volume: parseInt($("#vol").value, 10), theme: $("#theme").value, match_loudness: $("#match").checked, target_lufs: TARGET_LUFS,
+    },
+  };
+}
+function updChecks(){
+  const ul = $("#checks"); if(!ul) return;
+  const v = setupValues();
+  const idOk = /^[A-Za-z0-9_-]{1,24}$/.test(v.pid);
+  const missing = CODES.filter((c) => c !== "G" && (!AUD[c] || AUD[c].error || AUD[c].decoding));
+  const measuring = CODES.filter((c) => AUD[c] && AUD[c].measuring);
+  const need = setupNeed();
+  const short = CODES.filter((c) => { const a = AUD[c]; return a && a.duration != null && (a.duration - (a.embedded ? 0 : (OFFS[c] || 0))) < need - 0.3; });
+  const items = [
+    [idOk, idOk ? `参加者ID：${v.pid}` : "参加者IDを入れてください（半角の英数字・-・_）"],
+    [v.self_lyrics != null, v.self_lyrics == null ? `自選曲の歌詞の有無を選んでください（歌詞の質問を出すかが決まります）${v.test ? "（テストでは無しでも進めます）" : ""}` : `自選曲：${v.self_lyrics ? "歌詞あり（歌詞の質問を出す）" : "歌詞なし（歌詞の質問は出さない）"}`],
+    [missing.length === 0, missing.length ? `音源が未選択：${missing.join("・")}${v.test ? "（テストでは無しでも進めます）" : ""}` : "音源：A〜F そろっています"],
+    [measuring.length === 0, measuring.length ? `音の大きさを測っています：${measuring.join("・")}` : `音の大きさ：${v.settings.match_loudness ? `すべて ${TARGET_LUFS} LUFS` : "選んだファイルはそのまま"}`],
+    [short.length === 0, short.length ? `音源が短い：${short.join("・")}（${need}秒必要）` : `1条件：スペースキーで曲が流れ始める → ${v.settings.lead_s}秒後に計算が始まる → 曲を聴きながらかけ算${v.settings.task_s}秒（曲は${need}秒で終わる）`],
+    [true, `安静${v.settings.rest_s}秒・練習${v.settings.practice ? `あり（${v.settings.practice_s}秒）` : "なし"}${v.test ? "（テスト）" : ""}`],
+  ];
+  ul.innerHTML = items.map(([ok, t]) => `<li class="${ok ? "ok" : "ng"}"><span class="m">${ok ? "✓" : "!"}</span><span>${esc(t)}</span></li>`).join("");
+  const can = idOk && measuring.length === 0 && ((missing.length === 0 && short.length === 0 && v.self_lyrics != null) || v.test);
+  ["#start", "#startFs"].forEach((s) => { const b = $(s); if(b) b.disabled = !can; });
+}
+
+function startSession(fs){
+  const v = setupValues();
+  stopPreview();
+  if(fs){ try{ const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(r && r.catch) r.catch(() => {}); }catch(e){} }
+  try{ if(navigator.wakeLock) navigator.wakeLock.request("screen").catch(() => {}); }catch(e){}
+  unlockAudio();
+  const q = prefs(); Object.assign(q, {lastPid:v.pid, lastWeek:v.week, lastOrder:v.order_no, volume:v.settings.volume, theme:v.settings.theme, match:v.settings.match_loudness});
+  if(!v.test) Object.assign(q, {v:PREFS_V, rest_s:v.settings.rest_s, lead_s:v.settings.lead_s, task_s:v.settings.task_s, practice_s:v.settings.practice_s, practice:v.settings.practice});
+  if(v.pid) q.people = {...(q.people || {}), [v.pid]: {self_song:v.self_song, self_lyrics:v.self_lyrics, offA:OFFS.A || 0}};   // 参加者ごとに覚える（2週目以降の入力を楽にする）
+  savePrefs(q);
+  setTheme(v.settings.theme);
+  const audioMeta = {};
+  CODES.forEach((c) => {
+    const a = AUD[c];
+    if(c === "G" || !a){ audioMeta[c] = {file:null}; return; }
+    a.gain_db = autoGain(a); a.pcm = null;   // 測定用に読み込んだデータは捨てる
+    audioMeta[c] = {file:a.name, embedded:a.embedded, source:a.source, source_start_s:a.source_start_s, size:a.size, mode:a.mode,
+      duration_s: a.duration ? Math.round(a.duration * 100) / 100 : null, offset_s: a.embedded ? 0 : (OFFS[c] || 0),
+      lufs:a.lufs ?? null, peak_db:a.peak_db ?? null, gain_db:a.gain_db, capped:!!a.capped};
+  });
+  if(resumeId){
+    const s = loadSession(resumeId); resumeId = null;
+    if(!s){ renderSetup({text:"データが読めませんでした。", err:true}); return; }
+    S = s; S.audio_meta = audioMeta; S.settings.volume = v.settings.volume; S.settings.theme = v.settings.theme; S.status = "running";
+    if(S.settings.lead_s == null) S.settings.lead_s = v.settings.lead_s;
+    if(S.settings.match_loudness == null) S.settings.match_loudness = v.settings.match_loudness;
+    S.resumes = (S.resumes || 0) + 1;
+    // 途中だった段階を巻き戻す
+    let ph = S.phases[S.phase_idx];
+    if(ph.pos){
+      const back = S.phases.findIndex((x) => x.type === "ready" && x.pos === ph.pos);
+      const old = S.conds[ph.pos];
+      if(old && (old.rest || old.task)){ S.discarded = S.discarded || []; S.discarded.push({reason:"resume", pos:ph.pos, data:old}); }
+      S.conds[ph.pos] = newCond(ph.pos, S.order[ph.pos-1]); S.conds[ph.pos].restarts = (old && old.restarts || 0) + 1;
+      S.phase_idx = back;
+    } else if(ph.type === "practice" && S.practice){ S.discarded = S.discarded || []; S.discarded.push({reason:"resume", phase:"practice", data:S.practice}); S.practice = null; }
+    logEvent("resumed", {phase_idx:S.phase_idx, audio:Object.fromEntries(CODES.map((c) => [c, audioMeta[c].file]))});
+    go(); return;
+  }
+  const d = new Date(), id = `${v.pid}_w${v.week}_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  const seed = seedFor(v.week);
+  S = {
+    app:"music100", app_version:APP_VERSION, session_id:id, participant_id:v.pid, week:v.week, order_no:v.order_no, order:WILLIAMS[v.order_no-1],
+    test_mode:v.test, pre_short:v.pre_short, self_song:v.self_song, self_lyrics:v.self_lyrics, settings:v.settings, sheet_seed:seed, sheets:makeSheets(seed), audio_meta:audioMeta,
+    env:{ua:navigator.userAgent, screen:`${screen.width}x${screen.height}@${window.devicePixelRatio || 1}`, viewport:`${innerWidth}x${innerHeight}`, tz:Intl.DateTimeFormat().resolvedOptions().timeZone || "", in_artifact:inArtifact()},
+    created_at:isoLocal(Date.now()), status:"running", phases:buildPhases(v.settings.practice), phase_idx:0,
+    pre:null, post:null, practice:null, conds:{}, break:null, events:[], markers:[],
+  };
+  for(let k=1;k<=7;k++) S.conds[k] = newCond(k, S.order[k-1]);
+  logEvent("session_start", {order:S.order.join(""), seed, settings:S.settings, audio:Object.fromEntries(CODES.map((c) => [c, audioMeta[c].file]))});
+  go();
+}
+
+/* ---------- 全体のイベント ---------- */
+document.addEventListener("fullscreenchange", () => { if(S && S.status === "running") logEvent(document.fullscreenElement ? "fullscreen_on" : "fullscreen_off"); });
+window.addEventListener("beforeunload", (e) => { if(S && S.status === "running"){ persist(); e.preventDefault(); e.returnValue = ""; } });
+document.addEventListener("visibilitychange", () => { if(S && S.status === "running" && document.hidden) persist(); });
+
+getDownloads();
+renderSetup();
+</script>
+
+</html>
